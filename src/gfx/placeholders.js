@@ -40,6 +40,37 @@ export function generateFxPlaceholders(scene) {
     g.generateTexture('nappe-brume', 128, 64)
   })
 
+
+  // Solid combat bars/bursts — Créa streak textures vanish under NORMAL blend
+  ensure('fx-rayon', () => {
+    g.clear()
+    g.fillStyle(hex('#f0a020'), 1)
+    g.fillRect(0, 2, 128, 12)
+    g.fillStyle(hex('#ffe56a'), 1)
+    g.fillRect(0, 5, 128, 6)
+    g.fillStyle(hex('#fff6c8'), 0.95)
+    g.fillRect(0, 7, 128, 2)
+    g.generateTexture('fx-rayon', 128, 16)
+  })
+  ensure('fx-orbe', () => {
+    g.clear()
+    g.fillStyle(hex('#ffe56a'), 1)
+    g.fillCircle(10, 10, 9)
+    g.fillStyle(hex('#fff6c8'), 1)
+    g.fillCircle(10, 10, 5)
+    g.generateTexture('fx-orbe', 20, 20)
+  })
+  ensure('fx-nature', () => {
+    g.clear()
+    g.fillStyle(hex('#5cb85c'), 1)
+    g.fillCircle(12, 12, 11)
+    g.fillStyle(hex('#b6e39a'), 1)
+    g.fillEllipse(12, 10, 14, 10)
+    g.fillStyle(hex('#2f6b2f'), 1)
+    g.fillRect(11, 4, 2, 16)
+    g.generateTexture('fx-nature', 24, 24)
+  })
+
   // Break near-identical herbe-1/2/3 tiling with noisy variants
   for (let i = 0; i < 6; i++) {
     const key = `herbe-var-${i}`
