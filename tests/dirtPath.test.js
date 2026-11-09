@@ -8,3 +8,10 @@ describe('dirt path fill', () => {
     expect(src).not.toMatch(/stampMaskedTexture\(\s*this,\s*'chemin-terre'/)
   })
 })
+
+describe('grass underlay', () => {
+  it('uses drawGrassField instead of tiled herbe sprites', () => {
+    const src = fs.readFileSync(new URL('../src/scenes/WorldScene.js', import.meta.url), 'utf8')
+    expect(src).toMatch(/drawGrassField/)
+  })
+})

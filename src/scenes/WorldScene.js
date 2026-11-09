@@ -10,9 +10,8 @@ import { facingFromVector, canMelee, MELEE_DAMAGE, SPELL_COST } from '../combat/
 import { spendMana } from '../state/gameState.js'
 import { createEnemy, damageEnemy } from '../world/enemies.js'
 import { isWalkable, tileToWorld, worldToTile, buildWalkGrid } from '../world/tilemap.js'
-import { textureForCell } from '../world/autotile.js'
 import {
-  pathCells, waterCells, bridgeCells, drawSoftBlob, drawDirtPath, pathEdgeScatter,
+  pathCells, waterCells, bridgeCells, drawSoftBlob, drawDirtPath, pathEdgeScatter, drawGrassField,
   stampMaskedTexture, pointInBlob,
 } from '../world/smoothGround.js'
 import { getDialogue, canEnter } from '../world/dialogue.js'
@@ -119,17 +118,16 @@ export class WorldScene extends Phaser.Scene {
     this.bridgeCells = bridgeCells(this.level.tiles)
     this.pathCells = pathCells(this.level.tiles)
 
-    // Grass underlay everywhere (no wang path/water tiles → no checker / blue teeth)
+    // Irregular grass wash (no 32px tuft lattice)
+    const worldW = this.level.width * TILE
+    const worldH = this.level.height * TILE
+    const grassG = this.add.graphics().setDepth(0)
+    drawGrassField(grassG, worldW, worldH)
     for (let y = 0; y < this.level.height; y++) {
       for (let x = 0; x < this.level.width; x++) {
-        const key = textureForCell(this.level.tiles, x, y)
-        const { x: wx, y: wy } = tileToWorld(x, y, TILE)
-        const tex = this.textures.exists(key) ? key : (this.textures.exists('herbe-1') ? 'herbe-1' : key)
-        const img = this.add.image(wx, wy, tex).setDepth(0)
-        img.setFlipX(((x * 3 + y * 7) % 2) === 0)
-        img.setFlipY(((x * 5 + y) % 3) === 0)
         const ch = this.level.tiles[y][x]
         if (ch === '#') {
+          const { x: wx, y: wy } = tileToWorld(x, y, TILE)
           const wall = this.walls.create(wx, wy, 'herbe-1')
           wall.setVisible(false)
           wall.refreshBody()

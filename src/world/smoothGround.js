@@ -152,3 +152,17 @@ export function pointInBlob(wx, wy, cells, tile, carve = []) {
   }
   return false
 }
+
+/** Irregular grass wash — avoids obvious 32px tuft lattice. */
+export function drawGrassField(graphics, widthPx, heightPx) {
+  graphics.fillStyle(0x556b28, 1)
+  graphics.fillRect(0, 0, widthPx, heightPx)
+  for (let i = 0; i < Math.floor((widthPx * heightPx) / 28); i++) {
+    const h = Math.abs((i * 1103515245 + 12345) | 0)
+    const x = h % widthPx
+    const y = (h * 3) % heightPx
+    const shade = (h % 3 === 0) ? 0x6e8a38 : (h % 3 === 1) ? 0x3f5218 : 0x627834
+    graphics.fillStyle(shade, 0.5)
+    graphics.fillCircle(x, y, 1 + (h % 3))
+  }
+}
