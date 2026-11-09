@@ -15,7 +15,7 @@ WASD/flèches · Espace mêlée · E dialogue · 1/2/3 sorts · F lancer · Entr
 
 Pack pixel art **32px Créa** (`public/assets/sprites32/`, `manifest.json`).  
 Cible visuelle Pascal : `assets/concept/cible-finale-pascal.png`.  
-Résolution logique 640×360, `Scale.FIT` + `CENTER_BOTH`, `pixelArt`.
+HUD dans 640×360 ; niveaux paddés pour remplir la caméra. Résolution logique 640×360, `Scale.FIT` + `CENTER_BOTH`, `pixelArt`.
 
 ## Dev
 

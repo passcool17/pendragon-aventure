@@ -22,7 +22,10 @@ export function cycleSpell(unlocked, current, dir) {
 
 export function createKeyTracker(scene) {
   const down = {}
-  const onDown = (e) => { down[e.code] = true }
+  const onDown = (e) => {
+    down[e.code] = true
+    if (e.code === 'Space' || e.code === 'Tab') e.preventDefault()
+  }
   const onUp = (e) => { down[e.code] = false }
   window.addEventListener('keydown', onDown)
   window.addEventListener('keyup', onUp)

@@ -1,21 +1,28 @@
+import { hudLayout } from '../ui/hudLayout.js'
+import { SPELL_SLOTS } from '../input/spellSelect.js'
+import { GAME_CONFIG } from '../gameConfig.js'
+
 export class UIScene extends Phaser.Scene {
   constructor() { super('UIScene') }
 
   create() {
+    this.layout = hudLayout(GAME_CONFIG.width, GAME_CONFIG.height)
     this.hearts = []
-    this.manaBar = this.add.image(16, 48, 'barre-mana').setOrigin(0, 0.5).setScrollFactor(0).setDepth(1000)
-    this.manaFill = this.add.rectangle(18, 48, 90, 6, 0x4a8fd4).setOrigin(0, 0.5).setScrollFactor(0).setDepth(1001)
+    const m = this.layout.mana
+    this.manaBar = this.add.image(m.x, m.y, 'barre-mana').setOrigin(0, 0.5).setScrollFactor(0).setDepth(1000)
+    this.manaFill = this.add.rectangle(m.x + 2, m.y, m.w - 6, 6, 0x4a8fd4).setOrigin(0, 0.5).setScrollFactor(0).setDepth(1001)
     this.icons = {}
-    const keys = [
-      ['light', 'icon-lumiere'],
-      ['wind', 'icon-vent'],
-      ['nature', 'icon-nature'],
-    ]
-    keys.forEach(([id, tex], i) => {
-      const img = this.add.image(560 + i * 36, 330, tex).setScrollFactor(0).setDepth(1000)
+    this.locks = {}
+    this.layout.spellIcons.forEach(({ id, x, y }, i) => {
+      const tex = ['icon-lumiere', 'icon-vent', 'icon-nature'][i]
+      const img = this.add.image(x, y, tex).setScrollFactor(0).setDepth(1000)
       this.icons[id] = img
+      const lock = this.add.text(x + 10, y + 8, '🔒', {
+        fontFamily: 'monospace', fontSize: '10px',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(1002).setVisible(false)
+      this.locks[id] = lock
     })
-    this.msg = this.add.text(320, 56, '', {
+    this.msg = this.add.text(GAME_CONFIG.width / 2, 56, '', {
       fontFamily: 'monospace', fontSize: '12px', color: '#f0e6c8', backgroundColor: '#00000066',
       padding: { x: 6, y: 3 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(1100).setAlpha(0)
@@ -39,17 +46,22 @@ export class UIScene extends Phaser.Scene {
     if (!state) return
     this.hearts.forEach((h) => h.destroy())
     this.hearts = []
+    const ho = this.layout.heartsOrigin
     for (let i = 0; i < state.heartsMax; i++) {
-      const h = this.add.image(24 + i * 28, 22, 'coeur').setScrollFactor(0).setDepth(1000).setScale(0.7)
+      const h = this.add.image(ho.x + i * this.layout.heartGap, ho.y, 'coeur')
+        .setScrollFactor(0).setDepth(1000).setScale(0.7)
       h.setAlpha(i < state.hearts ? 1 : 0.25)
       this.hearts.push(h)
     }
-    this.manaFill.width = Math.max(0, 90 * state.mana)
-    for (const [k, img] of Object.entries(this.icons)) {
-      const unlocked = state.spellsUnlocked.includes(k)
-      img.setAlpha(unlocked ? 1 : 0.3)
-      img.setTint(state.activeSpell === k ? 0xffffff : 0x999999)
-      img.setScale(state.activeSpell === k ? 1.1 : 1)
+    this.manaFill.width = Math.max(0, (this.layout.mana.w - 6) * state.mana)
+    for (const id of SPELL_SLOTS) {
+      const img = this.icons[id]
+      if (!img) continue
+      const unlocked = state.spellsUnlocked.includes(id)
+      img.setAlpha(unlocked ? 1 : 0.35)
+      img.setTint(state.activeSpell === id ? 0xffffff : unlocked ? 0xbbbbbb : 0x555555)
+      img.setScale(state.activeSpell === id ? 1.1 : 1)
+      this.locks[id]?.setVisible(!unlocked)
     }
   }
 

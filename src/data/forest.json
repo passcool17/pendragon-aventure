@@ -4,22 +4,22 @@
   "height": 14,
   "spawn": {
     "x": 10,
-    "y": 10
+    "y": 11
   },
   "tiles": [
     "####################",
-    "#..................#",
     "#.~~...............#",
-    "#.~~~....NN........#",
-    "#.~~.....==........#",
-    "#~~~.....==........#",
-    "#.~~~..B.==.B......#",
-    "#.PP==============.#",
-    "#.PP==============.#",
-    "#~~~~....==B.......#",
-    "#.~~.....==........#",
-    "#.~~.....==........#",
-    "#........XX........#",
+    "#.~~~..............#",
+    "#.~~~....NN=.......#",
+    "#.~~~....===.......#",
+    "#~~~~....===.......#",
+    "#~~~~...B===B......#",
+    "#~PP=============..#",
+    "#~PP=============..#",
+    "#.~~~....===B......#",
+    "#.~~~....===.......#",
+    "#.~~.....===.......#",
+    "#.~~.....XXX.......#",
     "####################"
   ],
   "exits": [
@@ -35,6 +35,14 @@
       "to": "hub",
       "tile": [
         10,
+        12
+      ],
+      "spawnId": "from-forest"
+    },
+    {
+      "to": "hub",
+      "tile": [
+        11,
         12
       ],
       "spawnId": "from-forest"
@@ -61,18 +69,18 @@
   "enemies": [
     {
       "type": "shadow-blob",
-      "x": 10,
-      "y": 5
+      "x": 15,
+      "y": 4
     },
     {
       "type": "shadow-blob",
-      "x": 14,
-      "y": 8
+      "x": 16,
+      "y": 9
     },
     {
       "type": "mist-wolf",
-      "x": 6,
-      "y": 9
+      "x": 5,
+      "y": 3
     }
   ],
   "puzzles": [
@@ -82,7 +90,7 @@
       "unlock": "fog-gate",
       "tiles": [
         [
-          7,
+          8,
           6
         ],
         [
@@ -90,7 +98,7 @@
           6
         ],
         [
-          11,
+          12,
           9
         ]
       ]
@@ -100,7 +108,7 @@
     {
       "id": "forest-heart",
       "x": 16,
-      "y": 4,
+      "y": 5,
       "item": "heart-piece"
     }
   ],
@@ -108,7 +116,7 @@
     {
       "id": "forest-entry",
       "x": 10,
-      "y": 10
+      "y": 11
     }
   ],
   "npcs": [],
@@ -116,8 +124,8 @@
   "props": [
     {
       "key": "facade-sanctuaire",
-      "x": 9.5,
-      "y": 1.2,
+      "x": 10,
+      "y": 1.15,
       "originY": 1,
       "solid": false
     },
@@ -131,14 +139,7 @@
     {
       "key": "colonne-romaine",
       "x": 8,
-      "y": 3,
-      "originY": 1,
-      "solid": true
-    },
-    {
-      "key": "colonne-romaine",
-      "x": 11,
-      "y": 3,
+      "y": 3.2,
       "originY": 1,
       "solid": true
     },
@@ -150,8 +151,15 @@
       "solid": true
     },
     {
-      "key": "colonne-romaine-cassee",
+      "key": "colonne-romaine",
       "x": 13,
+      "y": 3.2,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "colonne-romaine-cassee",
+      "x": 14,
       "y": 4,
       "originY": 1,
       "solid": true
@@ -165,7 +173,7 @@
     },
     {
       "key": "muret-ruine",
-      "x": 14,
+      "x": 15,
       "y": 4,
       "originY": 1,
       "solid": true
@@ -173,21 +181,21 @@
     {
       "key": "pont-pierre",
       "x": 2.5,
-      "y": 7.5,
+      "y": 7.6,
       "originY": 0.55,
       "solid": false
     },
     {
       "key": "arbre-grand-1",
       "x": 5,
-      "y": 4,
+      "y": 5,
       "originY": 1,
       "solid": true
     },
     {
       "key": "arbre-grand-2",
       "x": 15,
-      "y": 5,
+      "y": 6,
       "originY": 1,
       "solid": true
     },
@@ -213,6 +221,27 @@
       "solid": true
     },
     {
+      "key": "arbre-grand-2",
+      "x": 17,
+      "y": 8,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "arbre-grand-1",
+      "x": 6,
+      "y": 12,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "arbre-grand-2",
+      "x": 14,
+      "y": 12,
+      "originY": 1,
+      "solid": true
+    },
+    {
       "key": "rocher-grand",
       "x": 6,
       "y": 10,
@@ -225,6 +254,20 @@
       "y": 10,
       "originY": 1,
       "solid": true
+    },
+    {
+      "key": "buisson-1",
+      "x": 8,
+      "y": 10,
+      "originY": 1,
+      "solid": false
+    },
+    {
+      "key": "buisson-2",
+      "x": 12,
+      "y": 11,
+      "originY": 1,
+      "solid": false
     }
   ]
 }

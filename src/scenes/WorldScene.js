@@ -5,6 +5,7 @@ import {
   setActiveSpell, bumpHeartsMax, setPosition,
 } from '../state/gameState.js'
 import { vectorFromKeys, cycleSpell, createKeyTracker } from '../input/controls.js'
+import { trySelectSpell } from '../input/spellSelect.js'
 import { facingFromVector, canMelee, MELEE_DAMAGE, SPELL_COST } from '../combat/combat.js'
 import { spendMana } from '../state/gameState.js'
 import { createEnemy, damageEnemy } from '../world/enemies.js'
@@ -53,6 +54,7 @@ export class WorldScene extends Phaser.Scene {
     this.npcs = []
     this.solidProps = []
     this.depthSprites = []
+    this.canopySprites = []
     this.facing = 'S'
     this.lastMelee = 0
     this.invulnUntil = 0
@@ -91,7 +93,9 @@ export class WorldScene extends Phaser.Scene {
     this.player.body.setSize(14, 12).setOffset(9, 32)
     this.depthSprites.push(this.player)
 
-    this.cameras.main.setBounds(0, 0, this.level.width * TILE, this.level.height * TILE)
+    const worldW = Math.max(this.level.width * TILE, this.scale.width)
+    const worldH = Math.max(this.level.height * TILE, this.scale.height)
+    this.cameras.main.setBounds(0, 0, worldW, worldH)
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12)
     this.cameras.main.setRoundPixels(true)
     this.physics.world.setBounds(0, 0, this.level.width * TILE, this.level.height * TILE)
@@ -136,10 +140,14 @@ export class WorldScene extends Phaser.Scene {
       spr.setOrigin(0.5, p.originY ?? 1)
       spr.setDepth(wy)
       this.depthSprites.push(spr)
+      if (p.key?.startsWith('arbre-') || p.canopy) {
+        spr.setData('canopy', true)
+        spr.setData('baseAlpha', 1)
+        this.canopySprites.push(spr)
+      }
       if (p.solid) {
         this.solidProps.push({
           x: Math.floor(p.x), y: Math.floor(p.y),
-          // foot collision ~1 tile
           spr,
         })
       }
@@ -157,12 +165,17 @@ export class WorldScene extends Phaser.Scene {
       if (d.scale) spr.setScale(d.scale)
       spr.setDepth(wy)
       this.depthSprites.push(spr)
+      if (d.key?.startsWith('arbre-') || d.canopy) {
+        spr.setData('canopy', true)
+        spr.setData('baseAlpha', 1)
+        this.canopySprites.push(spr)
+      }
       if (d.solid) this.solidProps.push({ x: d.x, y: d.y, spr })
     }
     // canopy along top/sides
     for (let x = 0; x < this.level.width; x += 3) {
       if (this.textures.exists('canopee-bord')) {
-        this.add.image(x * TILE + 64, 24, 'canopee-bord').setDepth(900).setAlpha(0.85).setScrollFactor(1)
+        this.add.image(x * TILE + 64, 24, 'canopee-bord').setDepth(900).setAlpha(0.7).setScrollFactor(1)
       }
     }
   }
@@ -264,6 +277,7 @@ export class WorldScene extends Phaser.Scene {
     this.handleActions()
     this.updateEnemies(dt)
     this.sortDepth()
+    this.updateCanopyFade()
     this.checkExits()
   }
 
@@ -326,14 +340,14 @@ export class WorldScene extends Phaser.Scene {
     }
 
     let state = getState(this)
-    if (this.keys.consume('Digit1') && state.spellsUnlocked.includes('light')) {
-      setState(this, setActiveSpell(state, 'light'))
-    }
-    if (this.keys.consume('Digit2') && state.spellsUnlocked.includes('wind')) {
-      setState(this, setActiveSpell(getState(this), 'wind'))
-    }
-    if (this.keys.consume('Digit3') && state.spellsUnlocked.includes('nature')) {
-      setState(this, setActiveSpell(getState(this), 'nature'))
+    for (const [code, slot] of [['Digit1', 1], ['Digit2', 2], ['Digit3', 3]]) {
+      if (!this.keys.consume(code)) continue
+      const r = trySelectSpell(getState(this), slot)
+      if (r.ok) setState(this, r.state)
+      else if (r.locked) {
+        const names = { light: 'Lumière', wind: 'Vent', nature: 'Nature' }
+        showMessage(this, `${names[r.spellId]} verrouillé`)
+      }
     }
     if (touch === 'cycle' || this.keys.consume('Tab')) {
       state = getState(this)
@@ -399,14 +413,16 @@ export class WorldScene extends Phaser.Scene {
   doMelee() {
     const tile = worldToTile(this.player.x, this.player.y, TILE)
     const target = meleeTargetTile(tile, this.facing)
-    const off = forwardOffset(this.facing, 18)
+    const off = forwardOffset(this.facing, 20)
+    // Root cause of invisible arc: depth ≈ player.y (~300) sat under trees/canopy (higher y / depth 900).
+    // Keep FX on a UI-like layer above all world decor for ~250ms.
     const arc = this.add.image(this.player.x + off.x, this.player.y + off.y, 'arc-attaque')
-      .setDepth(this.player.y + 1)
+      .setDepth(12000)
       .setRotation(FACING_ANGLE[this.facing] || 0)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setScale(1.2)
+      .setScale(1.6)
+      .setAlpha(1)
     this.tweens.add({
-      targets: arc, alpha: 0, scale: 1.7, duration: 340,
+      targets: arc, alpha: 0, scale: 2.1, duration: 260,
       onComplete: () => arc.destroy(),
     })
     this.cameras.main.shake(50, 0.003)
@@ -452,7 +468,7 @@ export class WorldScene extends Phaser.Scene {
       .setOrigin(0, 0.5)
       .setRotation(FACING_ANGLE[this.facing] || 0)
       .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(this.player.y + 2)
+      .setDepth(12000)
       .setDisplaySize(200, 22)
       .setAlpha(1)
     this.tweens.add({
@@ -492,18 +508,18 @@ export class WorldScene extends Phaser.Scene {
     const dir = this.facing
     const tiles = windGustTiles(origin, dir)
     const off = forwardOffset(dir, 20)
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
       const puff = this.add.image(
-        this.player.x + off.x + (Math.random() - 0.5) * 12,
-        this.player.y + off.y + (Math.random() - 0.5) * 12,
+        this.player.x + off.x + (Math.random() - 0.5) * 14,
+        this.player.y + off.y + (Math.random() - 0.5) * 14,
         'rafale-vent',
-      ).setDepth(this.player.y + 2).setRotation(FACING_ANGLE[dir] || 0).setBlendMode(Phaser.BlendModes.ADD)
+      ).setDepth(12000).setRotation(FACING_ANGLE[dir] || 0).setScale(1.4).setAlpha(1)
       const d = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }[dir]
       this.tweens.add({
         targets: puff,
-        x: puff.x + d[0] * (36 + i * 12),
-        y: puff.y + d[1] * (36 + i * 12),
-        alpha: 0, duration: 320 + i * 40,
+        x: puff.x + d[0] * (40 + i * 14),
+        y: puff.y + d[1] * (40 + i * 14),
+        alpha: 0, scale: 1.9, duration: 280 + i * 30,
         onComplete: () => puff.destroy(),
       })
     }
@@ -626,15 +642,15 @@ export class WorldScene extends Phaser.Scene {
       if (!e.alive) return
       let dx = Math.sign(pt.x - e.x)
       let dy = Math.sign(pt.y - e.y)
-      const nx = e.x + (Math.random() < e.speed * dt * 0.06 ? dx : 0)
-      const ny = e.y + (Math.random() < e.speed * dt * 0.06 ? dy : 0)
+      const nx = e.x + (Math.random() < e.speed * dt * 0.022 ? dx : 0)
+      const ny = e.y + (Math.random() < e.speed * dt * 0.022 ? dy : 0)
       if (isWalkable(this.level, nx, ny, this.extraWalk) && !this.blockAt(nx, ny)) {
         e.x = nx; e.y = ny
         const { x, y } = tileToWorld(e.x, e.y, TILE)
         this.enemySprites[i].setPosition(x, y)
       }
       if (e.x === pt.x && e.y === pt.y && now > this.invulnUntil) {
-        this.invulnUntil = now + 800
+        this.invulnUntil = now + 1000
         let state = applyDamage(getState(this), 1)
         setState(this, state)
         this.cameras.main.flash(80, 100, 30, 20)

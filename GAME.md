@@ -10,16 +10,19 @@ Cible finale : concept Pascal (chemin en croix, ruisseau + pont, ruines/colonnes
 | Entrée | Action |
 |--------|--------|
 | Flèches / WASD | Déplacement |
-| Espace | Mêlée |
+| Espace | Mêlée (arc visible ~250 ms) |
 | E | Interagir |
-| 1 / 2 / 3 | Lumière / Vent / Nature |
+| 1 / 2 / 3 | Lumière / Vent / Nature (🔒 si verrouillé) |
 | F | Lancer le sort |
 | Entrée / Espace | Nouvelle partie (titre) |
 | Échap | Pause |
 
 ## État
 
-**Publié — pack Créa sprites32** + autotile chemin/eau, Merlin dos/face/profil, y-sort, forêt type concept.  
+**Publié — correctifs forêt 32px**  
+- HUD dans 640×360 ; niveaux paddés ≥20×12 (plus de bande vide)  
+- Cimes semi-transparentes sous Merlin ; FX mêlée/vent depth 12000  
+- Ruisseau large + chemin 2–3 tuiles ; ombres loin du spawn, invuln 1 s  
 URL : https://passcool17.github.io/pendragon-aventure/  
 Debug forêt : https://passcool17.github.io/pendragon-aventure/?level=forest  
 
@@ -27,5 +30,4 @@ Crédits : **Créa** (`sprites32` + manifest). Concept cible : Pascal.
 
 ## Prochaines idées
 
-- Autotile coins intérieurs plus fins ; plus de variants de décor.
-- Audio SUNO ; polish boss.
+- Coins intérieurs autotile plus fins ; audio SUNO ; polish boss.

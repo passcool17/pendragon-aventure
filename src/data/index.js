@@ -10,6 +10,7 @@ import sanctuaryDungeon from './sanctuary-dungeon.json'
 import sanctuaryBoss from './sanctuary-boss.json'
 import bossFinal from './boss-final.json'
 import { validateLevel } from './validateLevel.js'
+import { padLevelToView } from './padLevel.js'
 
 export const levels = {
   hub,
@@ -29,7 +30,7 @@ export function loadLevel(id) {
   const data = levels[id]
   if (!data) throw new Error(`unknown level ${id}`)
   validateLevel(data)
-  return data
+  return padLevelToView(data, 20, 12)
 }
 
-export { validateLevel }
+export { validateLevel, padLevelToView }

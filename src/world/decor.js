@@ -23,7 +23,7 @@ function banned(level, x, y) {
   return false
 }
 
-/** Dense forest fill: ferns, bushes, rocks on grass; canopy hints on border. */
+/** Dense forest fill: ferns, bushes, rocks on grass; trees on border. */
 export function planDecor(level) {
   const out = []
   const id = level.id || ''
@@ -33,15 +33,21 @@ export function planDecor(level) {
       const ch = level.tiles[y][x]
       const h = cellHash(x, y, id.length)
       if (ch === '.' || ch === ',') {
-        if (h % 5 === 0) out.push({ key: h % 2 ? 'fougere-1' : 'fougere-2', x, y, originY: 1, solid: false })
-        else if (h % 11 === 3) out.push({ key: h % 2 ? 'buisson-1' : 'buisson-2', x, y, originY: 1, solid: false })
-        else if (h % 17 === 5) out.push({ key: 'rocher-petit', x, y, originY: 1, solid: true })
+        if (h % 3 === 0) out.push({ key: h % 2 ? 'fougere-1' : 'fougere-2', x, y, originY: 1, solid: false })
+        else if (h % 7 === 2) out.push({ key: h % 2 ? 'buisson-1' : 'buisson-2', x, y, originY: 1, solid: false })
+        else if (h % 13 === 5) out.push({ key: 'rocher-petit', x, y, originY: 1, solid: true })
+        else if (h % 19 === 1 && (x <= 2 || x >= level.width - 3 || y <= 2 || y >= level.height - 3)) {
+          out.push({ key: h % 2 ? 'arbre-grand-1' : 'arbre-grand-2', x, y, originY: 1, solid: true, canopy: true })
+        }
       }
-      if (ch === '#' && h % 4 === 0) {
-        out.push({ key: h % 2 ? 'arbre-grand-1' : 'arbre-grand-2', x, y, originY: 1, solid: true })
+      if (ch === '#' && h % 3 === 0) {
+        out.push({ key: h % 2 ? 'arbre-grand-1' : 'arbre-grand-2', x, y, originY: 1, solid: true, canopy: true })
       }
-      if ((isPathChar(ch) || isBridgeChar(ch)) && h % 23 === 7) {
-        out.push({ key: 'fougere-1', x, y, originY: 1, scale: 0.7, solid: false })
+      if ((isPathChar(ch) || isBridgeChar(ch)) && h % 17 === 7) {
+        out.push({ key: 'fougere-1', x, y, originY: 1, scale: 0.75, solid: false })
+      }
+      if (!isWaterChar(ch) && !isBridgeChar(ch) && !isPathChar(ch) && ch !== '#' && h % 29 === 0) {
+        out.push({ key: 'buisson-2', x, y, originY: 1, solid: false })
       }
     }
   }
