@@ -19,7 +19,9 @@ Cible finale : concept Pascal (chemin en croix, ruisseau + pont, ruines/colonnes
 
 ## État
 
-**Publié — correctifs forêt 32px**  
+**Publié — hotfix boot** (`updateCanopyFade` manquait → TypeError chaque frame).
+
+**Correctifs forêt 32px**  
 - HUD dans 640×360 ; niveaux paddés ≥20×12 (plus de bande vide)  
 - Cimes semi-transparentes sous Merlin ; FX mêlée/vent depth 12000  
 - Ruisseau large + chemin 2–3 tuiles ; ombres loin du spawn, invuln 1 s  

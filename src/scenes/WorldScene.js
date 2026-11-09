@@ -277,7 +277,7 @@ export class WorldScene extends Phaser.Scene {
     this.handleActions()
     this.updateEnemies(dt)
     this.sortDepth()
-    this.updateCanopyFade()
+    this.updateCanopyFade?.()
     this.checkExits()
   }
 
@@ -708,6 +708,24 @@ export class WorldScene extends Phaser.Scene {
       }
       this.travel(ex.to)
       return
+    }
+  }
+
+
+  updateCanopyFade() {
+    if (!this.player || !this.canopySprites?.length) return
+    const px = this.player.x
+    const py = this.player.y
+    for (const spr of this.canopySprites) {
+      if (!spr.active) continue
+      const top = spr.y - spr.displayHeight
+      const under =
+        px > spr.x - spr.displayWidth * 0.45 &&
+        px < spr.x + spr.displayWidth * 0.45 &&
+        py < spr.y - 8 &&
+        py > top + spr.displayHeight * 0.15
+      const base = spr.getData('baseAlpha') ?? 1
+      spr.setAlpha(under ? Math.min(base, 0.38) : base)
     }
   }
 
