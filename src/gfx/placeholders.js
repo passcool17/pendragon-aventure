@@ -39,5 +39,39 @@ export function generateFxPlaceholders(scene) {
     g.fillEllipse(64, 32, 120, 50)
     g.generateTexture('nappe-brume', 128, 64)
   })
+
+  // Break near-identical herbe-1/2/3 tiling with noisy variants
+  for (let i = 0; i < 6; i++) {
+    const key = `herbe-var-${i}`
+    ensure(key, () => {
+      g.clear()
+      const base = [0x556b28, 0x4f6724, 0x5a702c, 0x4a5e20, 0x627834, 0x536622][i]
+      g.fillStyle(base, 1)
+      g.fillRect(0, 0, 32, 32)
+      for (let n = 0; n < 48; n++) {
+        const hx = Math.abs((i * 97 + n * 57) | 0)
+        const x = hx % 32
+        const y = (hx * 3) % 32
+        const lit = (hx % 2) ? 0x6e8a38 : 0x3f5218
+        g.fillStyle(lit, 0.45)
+        g.fillRect(x, y, 2, 2)
+      }
+      g.generateTexture(key, 32, 32)
+    })
+  }
+  ensure('dirt-fill', () => {
+    g.clear()
+    g.fillStyle(0xa8844a, 1)
+    g.fillRect(0, 0, 64, 64)
+    for (let n = 0; n < 220; n++) {
+      const hx = Math.abs((n * 131 + 17) | 0)
+      const x = hx % 64
+      const y = (hx * 7) % 64
+      g.fillStyle((hx % 2) ? 0x8f6e3c : 0xb89555, 0.4)
+      g.fillRect(x, y, 1, 1)
+    }
+    g.generateTexture('dirt-fill', 64, 64)
+  })
+
   g.destroy()
 }

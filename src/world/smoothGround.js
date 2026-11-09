@@ -1,6 +1,7 @@
-/** Smooth path/water blobs from tile marks — circle+capsule union (no wang autotile). */
+/** Smooth path/water blobs — circle+capsule union; path = unified dirt (no tuft tile). */
 
 import { isPathChar, isWaterChar, isBridgeChar } from './autotile.js'
+import { cellHash } from './decor.js'
 
 export function collectCells(tiles, pred) {
   const out = []
@@ -42,7 +43,6 @@ function paintUnion(graphics, cells, tile, radius) {
   }
 }
 
-/** Soft bank: darker under-blob then main fill. */
 export function drawSoftBlob(graphics, cells, tile, fillColor, rimColor) {
   if (!cells.length) return
   const r = blobRadius(tile)
@@ -52,14 +52,64 @@ export function drawSoftBlob(graphics, cells, tile, fillColor, rimColor) {
   paintUnion(graphics, cells, tile, r)
 }
 
-/** Stamp a tile texture into a RenderTexture, clipped by a geometry mask from the blob. */
+/** Unified dirt: solid fill + sparse brown noise (never stamps chemin-terre tufts). */
+export function drawDirtPath(graphics, cells, tile) {
+  if (!cells.length) return
+  drawSoftBlob(graphics, cells, tile, 0xa8844a, 0x7a5e32)
+  const set = new Set(cells.map((c) => `${c.x},${c.y}`))
+  for (const c of cells) {
+    const p = cellCenter(c, tile)
+    for (let i = 0; i < 6; i++) {
+      const h = cellHash(c.x, c.y, i + 3)
+      if (h % 4 === 0) continue
+      const ox = ((h % 17) - 8) * 1.2
+      const oy = (((h * 3) % 17) - 8) * 1.2
+      const shade = h % 2 ? 0x8f6e3c : 0xb89555
+      graphics.fillStyle(shade, 0.35)
+      graphics.fillCircle(p.x + ox, p.y + oy, 1.1)
+    }
+    // skip interior noise density — keep surface calm
+    const edge = ![
+      set.has(`${c.x},${c.y - 1}`),
+      set.has(`${c.x + 1},${c.y}`),
+      set.has(`${c.x},${c.y + 1}`),
+      set.has(`${c.x - 1},${c.y}`),
+    ].every(Boolean)
+    if (!edge) continue
+  }
+}
+
+/** Hash-scattered pebbles / ferns only on path rim (no grid). */
+export function pathEdgeScatter(pathCellsList, tile = 32) {
+  const set = new Set(pathCellsList.map((c) => `${c.x},${c.y}`))
+  const out = []
+  for (const c of pathCellsList) {
+    const n = set.has(`${c.x},${c.y - 1}`)
+    const e = set.has(`${c.x + 1},${c.y}`)
+    const s = set.has(`${c.x},${c.y + 1}`)
+    const w = set.has(`${c.x - 1},${c.y}`)
+    if (n && e && s && w) continue
+    const h = cellHash(c.x, c.y, 41)
+    const p = cellCenter(c, tile)
+    if (h % 9 === 0) {
+      out.push({ key: 'rocher-petit', x: p.x + (h % 5) - 2, y: p.y + ((h * 2) % 5) - 2, scale: 0.4, depth: 6 })
+    } else if (h % 13 === 3) {
+      out.push({
+        key: h % 2 ? 'fougere-1' : 'fougere-2',
+        x: p.x + ((h * 3) % 7) - 3,
+        y: p.y + ((h * 5) % 7) - 3,
+        scale: 0.55,
+        depth: 6,
+      })
+    }
+  }
+  return out
+}
+
 export function stampMaskedTexture(scene, key, cells, tile, depth, tint = 0xffffff) {
   if (!cells.length || !scene.textures.exists(key)) return null
-  const w = Math.max(...cells.map((c) => c.x)) * tile + tile * 2
-  const h = Math.max(...cells.map((c) => c.y)) * tile + tile * 2
-  const worldW = Math.max(w, (scene.level?.width || 20) * tile)
-  const worldH = Math.max(h, (scene.level?.height || 12) * tile)
-
+  const worldW = Math.max((scene.level?.width || 20) * tile, 64)
+  const worldH = Math.max((scene.level?.height || 12) * tile, 64)
   const rt = scene.add.renderTexture(0, 0, worldW, worldH).setOrigin(0, 0).setDepth(depth)
   rt.setTint(tint)
   const pad = new Set()
@@ -73,12 +123,10 @@ export function stampMaskedTexture(scene, key, cells, tile, depth, tint = 0xffff
     if (x < 0 || y < 0) continue
     rt.draw(key, x * tile, y * tile)
   }
-
   const g = scene.make.graphics({ x: 0, y: 0, add: false })
   g.fillStyle(0xffffff)
   paintUnion(g, cells, tile, blobRadius(tile))
-  const mask = g.createGeometryMask()
-  rt.setMask(mask)
+  rt.setMask(g.createGeometryMask())
   rt.setData('maskGraphics', g)
   return rt
 }

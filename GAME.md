@@ -44,3 +44,5 @@ Crédits : **Créa** (`sprites32` + manifest). Concept cible : Pascal.
 
 Chemin / ruisseau : **blobs** cercle+capsule (`smoothGround`) + tampon texture masqué — plus d’autotile 47 cases.
 Vent : rafale voyage ~700 ms (hold+fade+trail).
+
+Chemin : terre unie bruitée (`drawDirtPath`), plus de tampon `chemin-terre` (touffe centrale).

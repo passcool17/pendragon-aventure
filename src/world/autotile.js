@@ -1,4 +1,4 @@
-/** Tile char helpers + grass variants. Path/water visuals use smoothGround (not wang autotile). */
+/** Tile char helpers + grass variants. Path/water visuals use smoothGround. */
 
 export function isPathChar(ch) {
   return ch === '=' || ch === 'B' || ch === 'D' || ch === 'X' || ch === 'N' || ch === 'C' || ch === 'T' || ch === 'G'
@@ -17,15 +17,14 @@ export function isGrassChar(ch) {
 }
 
 export function herbeKey(x, y) {
-  const h = Math.abs((x * 374761 + y * 668265) | 0) % 3
-  return ['herbe-1', 'herbe-2', 'herbe-3'][h]
+  const h = Math.abs((x * 374761 + y * 668265) | 0)
+  return `herbe-var-${h % 6}`
 }
 
-/** Ground underlay only — never returns chemin/eau wang tiles. */
+/** Ground underlay — noisy grass variants (fallback herbe-1). */
 export function textureForCell(tiles, x, y) {
   return herbeKey(x, y)
 }
 
-/** @deprecated kept for tests that still mention names — map to grass. */
-export function cheminKey() { return 'herbe-1' }
+export function cheminKey() { return 'dirt-fill' }
 export function eauKey() { return 'herbe-1' }

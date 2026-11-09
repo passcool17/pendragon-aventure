@@ -12,7 +12,8 @@ import { createEnemy, damageEnemy } from '../world/enemies.js'
 import { isWalkable, tileToWorld, worldToTile, buildWalkGrid } from '../world/tilemap.js'
 import { textureForCell } from '../world/autotile.js'
 import {
-  pathCells, waterCells, bridgeCells, drawSoftBlob, stampMaskedTexture, pointInBlob,
+  pathCells, waterCells, bridgeCells, drawSoftBlob, drawDirtPath, pathEdgeScatter,
+  stampMaskedTexture, pointInBlob,
 } from '../world/smoothGround.js'
 import { getDialogue, canEnter } from '../world/dialogue.js'
 import { lightBrazier, extinguishBrazier, allBraziersLit } from '../puzzles/braziers.js'
@@ -123,8 +124,10 @@ export class WorldScene extends Phaser.Scene {
       for (let x = 0; x < this.level.width; x++) {
         const key = textureForCell(this.level.tiles, x, y)
         const { x: wx, y: wy } = tileToWorld(x, y, TILE)
-        const tex = this.textures.exists(key) ? key : 'herbe-1'
-        this.add.image(wx, wy, tex).setDepth(0)
+        const tex = this.textures.exists(key) ? key : (this.textures.exists('herbe-1') ? 'herbe-1' : key)
+        const img = this.add.image(wx, wy, tex).setDepth(0)
+        img.setFlipX(((x * 3 + y * 7) % 2) === 0)
+        img.setFlipY(((x * 5 + y) % 3) === 0)
         const ch = this.level.tiles[y][x]
         if (ch === '#') {
           const wall = this.walls.create(wx, wy, 'herbe-1')
@@ -134,24 +137,27 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    // Smooth water + path blobs (texture stamp + soft rim)
+    // Smooth water (texture stamp OK — no tuft grid) + unified dirt path (no chemin-terre)
     const waterG = this.add.graphics().setDepth(1)
     drawSoftBlob(waterG, this.waterCells, TILE, 0x2a5a6e, 0x1a3a48)
     stampMaskedTexture(this, 'eau-ruisseau', this.waterCells, TILE, 2, 0xffffff)
 
     const pathG = this.add.graphics().setDepth(3)
-    drawSoftBlob(pathG, this.pathCells, TILE, 0xa8844a, 0x7a5e32)
-    stampMaskedTexture(this, 'chemin-terre', this.pathCells, TILE, 4, 0xffffff)
+    drawDirtPath(pathG, this.pathCells, TILE)
 
-    // Light bank pebbles along water edge (decor hint)
+    for (const d of pathEdgeScatter(this.pathCells, TILE)) {
+      if (!this.textures.exists(d.key)) continue
+      this.add.image(d.x, d.y, d.key).setDepth(d.depth).setScale(d.scale || 1).setAlpha(0.9)
+    }
+
     const bridgeSet = new Set(this.bridgeCells.map((c) => `${c.x},${c.y}`))
     for (const c of this.waterCells) {
       if (bridgeSet.has(`${c.x},${c.y}`)) continue
-      const h = (c.x * 13 + c.y * 7) % 5
+      const h = (c.x * 13 + c.y * 7) % 7
       if (h !== 0) continue
       const { x: wx, y: wy } = tileToWorld(c.x, c.y, TILE)
       if (this.textures.exists('rocher-petit')) {
-        this.add.image(wx + 10, wy - 6, 'rocher-petit').setDepth(5).setScale(0.45).setAlpha(0.85)
+        this.add.image(wx + ((h * 5) % 9) - 4, wy - 6, 'rocher-petit').setDepth(5).setScale(0.4).setAlpha(0.85)
       }
     }
   }
