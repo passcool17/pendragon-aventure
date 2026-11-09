@@ -24,7 +24,7 @@ import {
   meleeTargetTile, knockbackTile, windGustTiles,
 } from '../fx/feel.js'
 import {
-  meleeFxSpec, lightBeamFxSpec, lightOrbFxSpec,
+  meleeFxSpec, lightBeamFxSpec, lightHaloFxSpec, lightOrbFxSpec, lightSparkFxSpec,
   windGustFxSpec, windTrailSpecs, natureBurstFxSpec,
 } from '../fx/combatFx.js'
 import { planDecor } from '../world/decor.js'
@@ -459,6 +459,10 @@ export class WorldScene extends Phaser.Scene {
 
   /** Combat VFX above decor; NORMAL blend; never inherits GeometryMask. */
   spawnCombatFx(x, y, key, rotation = 0, scale = 1, opts = {}) {
+    // Soft FX textures need LINEAR filtering even though the game is pixelArt
+    if (this.textures.exists(key) && /^fx-(rayon|orbe|spark|vent|nature)/.test(key)) {
+      this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR)
+    }
     const img = this.add.image(x, y, key)
       .setDepth(25000)
       .setScrollFactor(1)
@@ -481,7 +485,7 @@ export class WorldScene extends Phaser.Scene {
     this._fxTimers = []
     const keys = new Set([
       'arc-attaque', 'rafale-vent', 'rayon-lumiere', 'orbe',
-      'fx-rayon', 'fx-orbe', 'fx-nature',
+      'fx-rayon', 'fx-rayon-halo', 'fx-orbe', 'fx-spark', 'fx-vent', 'fx-nature',
     ])
     for (const spr of [...this.children.list]) {
       if (spr?.texture && keys.has(spr.texture.key)) spr.destroy()
@@ -505,6 +509,15 @@ export class WorldScene extends Phaser.Scene {
           tint: extras.tint ?? spec.tint,
         },
       )
+      if (spec.shimmer) {
+        this.tweens.add({
+          targets: img,
+          alpha: { from: 0.85, to: 1 },
+          duration: 90,
+          yoyo: true,
+          repeat: Math.max(0, Math.floor((spec.holdMs || 160) / 90) - 1),
+        })
+      }
       const travel = spec.travelPx || 0
       const dx = spec.dx ?? 0
       const dy = spec.dy ?? 0
@@ -589,15 +602,13 @@ export class WorldScene extends Phaser.Scene {
   }
 
   castLightBeam(tile) {
-    const beam = lightBeamFxSpec(this.player, this.facing)
-    this.playCombatFx(beam)
-    // Soft wider twin (same path) so the golden ray reads in NORMAL blend
-    this.playCombatFx({
-      ...beam,
-      displayH: Math.round((beam.displayH || 36) * 1.6),
-      scale: 1,
-    }, { tint: 0xfff0a0 })
+    this.playCombatFx(lightHaloFxSpec(this.player, this.facing))
+    this.playCombatFx(lightBeamFxSpec(this.player, this.facing))
     this.playCombatFx(lightOrbFxSpec(this.player, this.facing))
+    for (let i = 0; i < 4; i++) {
+      const spark = lightSparkFxSpec(this.player, this.facing, i)
+      this.playCombatFx(spark, { staggerMs: spark.staggerMs })
+    }
     this.cameras.main.shake(40, 0.002)
 
     const DELTA = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }

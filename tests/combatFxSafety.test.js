@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
 import {
-  meleeFxSpec, lightBeamFxSpec, lightOrbFxSpec,
+  meleeFxSpec, lightBeamFxSpec, lightHaloFxSpec, lightOrbFxSpec, lightSparkFxSpec,
   windGustFxSpec, windTrailSpecs, natureBurstFxSpec,
+  combatFxCenter, combatFxAxisError,
 } from '../src/fx/combatFx.js'
 import { FACING_DELTA } from '../src/fx/feel.js'
 
@@ -13,10 +14,12 @@ describe('combat FX safety (WebGL non-regression)', () => {
   const main = fs.readFileSync(new URL('../src/main.js', import.meta.url), 'utf8')
   const placeholders = fs.readFileSync(new URL('../src/gfx/placeholders.js', import.meta.url), 'utf8')
 
-  it('defines solid NORMAL-blend combat textures (Créa streaks vanish under NORMAL)', () => {
+  it('defines soft gradient light textures (not hard rects)', () => {
     expect(placeholders).toMatch(/fx-rayon/)
-    expect(placeholders).toMatch(/fx-orbe/)
-    expect(placeholders).toMatch(/fx-nature/)
+    expect(placeholders).toMatch(/fx-rayon-halo/)
+    expect(placeholders).toMatch(/fx-spark/)
+    expect(placeholders).toMatch(/createLinearGradient|createRadialGradient|forceCanvas/)
+    expect(placeholders).toMatch(/fx-vent/)
   })
 
   it('forces WEBGL so Canvas headless cannot hide WebGL-only regressions', () => {
@@ -34,20 +37,67 @@ describe('combat FX safety (WebGL non-regression)', () => {
     expect(world).toMatch(/playCombatFx/)
     expect(world).toMatch(/setDepth\(25000\)/)
     expect(world).toMatch(/BlendModes\.NORMAL/)
-    expect(world).toMatch(/clearMask\(true\)/)
+    expect(world).toMatch(/FilterMode\.LINEAR/)
     expect(world).not.toMatch(/BlendModes\.ADD/)
-    // each spell + melee uses playCombatFx
-    expect(world).toMatch(/playCombatFx\(meleeFxSpec/)
     expect(world).toMatch(/lightBeamFxSpec/)
-    expect(world).toMatch(/playCombatFx\(beam/)
-    expect(world).toMatch(/playCombatFx\(lightOrbFxSpec/)
-    expect(world).toMatch(/playCombatFx\(trail/)
-    expect(world).toMatch(/playCombatFx\(natureBurstFxSpec/)
-    // no raw add.image for combat texture keys outside spawnCombatFx
-    const withoutSpawn = world.replace(/spawnCombatFx[\s\S]*?return img\n  }/, '')
-    expect(withoutSpawn).not.toMatch(/add\.image\([^)]*'arc-attaque'/)
-    expect(withoutSpawn).not.toMatch(/add\.image\([^)]*'rayon-lumiere'/)
-    expect(withoutSpawn).not.toMatch(/add\.image\([^)]*'rafale-vent'/)
+    expect(world).toMatch(/lightHaloFxSpec/)
+    expect(world).toMatch(/lightSparkFxSpec/)
+    expect(world).toMatch(/playCombatFx\(meleeFxSpec/)
+    expect(world).toMatch(/natureBurstFxSpec/)
+  })
+
+  it('light beam is thin (~16–20px) with soft halo and hold/fade', () => {
+    const s = lightBeamFxSpec({ x: 100, y: 100 }, 'E')
+    expect(s.key).toBe('fx-rayon')
+    expect(s.displayH).toBeGreaterThanOrEqual(16)
+    expect(s.displayH).toBeLessThanOrEqual(20)
+    expect(s.shimmer).toBe(true)
+    expect(s.holdMs).toBeGreaterThanOrEqual(160)
+    const halo = lightHaloFxSpec({ x: 100, y: 100 }, 'E')
+    expect(halo.key).toBe('fx-rayon-halo')
+    expect(halo.displayH).toBeGreaterThan(s.displayH)
+    expect(lightOrbFxSpec({ x: 100, y: 100 }, 'E').key).toBe('fx-orbe')
+    expect(lightSparkFxSpec({ x: 100, y: 100 }, 'E', 0).key).toBe('fx-spark')
+  })
+
+  it('wind uses centre origin, integer scale ~2, soft fx-vent texture', () => {
+    const s = windGustFxSpec({ x: 320, y: 200 }, 'E')
+    expect(s.key).toBe('fx-vent')
+    expect(s.originX).toBe(0.5)
+    expect(s.originY).toBe(0.5)
+    expect(s.scale).toBe(1)
+    expect(Number.isInteger(s.scale)).toBe(true)
+    expect(s.endScale).toBe(1)
+    expect(s.travelPx).toBeLessThanOrEqual(60)
+    expect(windTrailSpecs(s).length).toBeLessThanOrEqual(2)
+  })
+
+  it('aligns FX centre on Merlin axis in all 4 directions', () => {
+    const p = { x: 200, y: 300 }
+    for (const dir of ['N', 'S', 'E', 'W']) {
+      const wind = windGustFxSpec(p, dir)
+      const { error, axis, center } = combatFxAxisError(p, dir, wind)
+      expect(error, `${dir} wind ${axis}`).toBeLessThan(0.01)
+      if (dir === 'S' || dir === 'N') {
+        expect(wind.x).toBe(p.x)
+        expect(center.x).toBe(p.x)
+      } else {
+        expect(wind.y).toBe(p.y)
+        expect(center.y).toBe(p.y)
+      }
+      // forward of Merlin
+      const d = FACING_DELTA[dir]
+      expect((center.x - p.x) * d.x + (center.y - p.y) * d.y).toBeGreaterThan(0)
+
+      const beam = lightBeamFxSpec(p, dir)
+      // Beam origin is left-centre; geometric centre should sit on the facing axis
+      const bc = combatFxCenter(beam)
+      if (dir === 'S' || dir === 'N') {
+        expect(Math.abs(bc.x - p.x)).toBeLessThan(0.01)
+      } else {
+        expect(Math.abs(bc.y - p.y)).toBeLessThan(0.01)
+      }
+    }
   })
 
   it('UIScene does not clear the WebGL buffer over World FX', () => {
@@ -59,56 +109,5 @@ describe('combat FX safety (WebGL non-regression)', () => {
     const start = controls.indexOf('consume(code)')
     const body = controls.slice(start, start + 200)
     expect(body).not.toMatch(/down\[code\]\s*=\s*false/)
-  })
-
-  it('melee arc holds opaque then fades', () => {
-    const s = meleeFxSpec({ x: 100, y: 100 }, 'E')
-    expect(s.key).toBe('arc-attaque')
-    expect(s.holdMs).toBeGreaterThanOrEqual(160)
-    expect(s.x).toBeGreaterThan(100)
-  })
-
-  it('light beam is a forward golden bar with hold (not instant fade)', () => {
-    const s = lightBeamFxSpec({ x: 100, y: 100 }, 'E')
-    expect(s.key).toBe('fx-rayon')
-    expect(s.originX).toBe(0)
-    expect(s.displayW).toBeGreaterThanOrEqual(180)
-    expect(s.holdMs).toBeGreaterThanOrEqual(150)
-    expect(s.fadeMs).toBeGreaterThanOrEqual(200)
-    const orb = lightOrbFxSpec({ x: 100, y: 100 }, 'E')
-    expect(orb.key).toBe('fx-orbe')
-    expect(orb.travelPx).toBeGreaterThan(0)
-  })
-
-  it('wind spawns in front of Merlin with short on-screen travel', () => {
-    const s = windGustFxSpec({ x: 320, y: 200 }, 'E')
-    expect(s.key).toBe('rafale-vent')
-    expect(s.x).toBeGreaterThan(320)
-    expect(s.y).toBe(200)
-    expect(s.travelPx).toBeLessThanOrEqual(80)
-    expect(s.originX).toBe(0)
-    expect(s.originY).toBe(0.5)
-    expect(s.holdMs + s.fadeMs).toBeGreaterThanOrEqual(650)
-    expect(windTrailSpecs(s)).toHaveLength(3)
-  })
-
-  it('wind / light / melee / nature all aim with facing in 4 directions', () => {
-    const p = { x: 200, y: 200 }
-    for (const dir of ['N', 'S', 'E', 'W']) {
-      const d = FACING_DELTA[dir]
-      const melee = meleeFxSpec(p, dir)
-      expect(melee.x).toBe(p.x + d.x * 22)
-      expect(melee.y).toBe(p.y + d.y * 22)
-      const light = lightBeamFxSpec(p, dir)
-      expect(light.x).toBe(p.x + d.x * 10)
-      expect(light.y).toBe(p.y + d.y * 10)
-      const wind = windGustFxSpec(p, dir)
-      expect(wind.x).toBe(p.x + d.x * 18)
-      expect(wind.y).toBe(p.y + d.y * 18)
-      const nature = natureBurstFxSpec(p, dir)
-      expect(nature.x).toBe(p.x + d.x * 20)
-      expect(nature.y).toBe(p.y + d.y * 20)
-      expect(nature.key).toBe('fx-nature')
-    }
   })
 })

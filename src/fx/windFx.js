@@ -1,1 +1,1 @@
-export { windGustFxSpec } from './combatFx.js'
+export { windGustFxSpec, combatFxCenter, combatFxAxisError } from './combatFx.js'

@@ -41,25 +41,127 @@ export function generateFxPlaceholders(scene) {
   })
 
 
-  // Solid combat bars/bursts — Créa streak textures vanish under NORMAL blend
-  ensure('fx-rayon', () => {
-    g.clear()
-    g.fillStyle(hex('#f0a020'), 1)
-    g.fillRect(0, 2, 128, 12)
-    g.fillStyle(hex('#ffe56a'), 1)
-    g.fillRect(0, 5, 128, 6)
-    g.fillStyle(hex('#fff6c8'), 0.95)
-    g.fillRect(0, 7, 128, 2)
-    g.generateTexture('fx-rayon', 128, 16)
+  // Soft luminous combat textures (canvas gradients — readable with NORMAL blend)
+  const forceCanvas = (key, w, h, paint) => {
+    if (scene.textures.exists(key)) scene.textures.remove(key)
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    paint(ctx, w, h)
+    scene.textures.addCanvas(key, canvas)
+  }
+
+  // Horizontal soft beam: white-yellow core, golden falloff, transparent edges (~18px logical)
+  forceCanvas('fx-rayon', 256, 48, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h)
+    const cy = h / 2
+    // Outer golden halo (soft)
+    for (let y = 0; y < h; y++) {
+      const dy = Math.abs(y - cy) / (h / 2)
+      const a = Math.max(0, 1 - dy) ** 2.2 * 0.45
+      ctx.fillStyle = `rgba(240, 170, 40, ${a})`
+      ctx.fillRect(0, y, w, 1)
+    }
+    // Mid gold band
+    for (let y = 0; y < h; y++) {
+      const dy = Math.abs(y - cy) / (h * 0.32)
+      const a = Math.max(0, 1 - dy) ** 1.5 * 0.95
+      ctx.fillStyle = `rgba(255, 205, 55, ${a})`
+      ctx.fillRect(0, y, w, 1)
+    }
+    // Hot white-yellow core
+    for (let y = 0; y < h; y++) {
+      const dy = Math.abs(y - cy) / (h * 0.14)
+      const a = Math.max(0, 1 - dy) ** 1.2
+      ctx.fillStyle = `rgba(255, 252, 230, ${a})`
+      ctx.fillRect(0, y, w, 1)
+    }
+    // Tip fade along length (softer toward the tip)
+    const tip = ctx.createLinearGradient(0, 0, w, 0)
+    tip.addColorStop(0, 'rgba(255,255,255,0)')
+    tip.addColorStop(0.08, 'rgba(255,255,255,0)')
+    tip.addColorStop(0.85, 'rgba(255,255,255,0)')
+    tip.addColorStop(1, 'rgba(0,0,0,0.55)')
+    ctx.globalCompositeOperation = 'destination-out'
+    ctx.fillStyle = tip
+    ctx.fillRect(0, 0, w, h)
+    ctx.globalCompositeOperation = 'source-over'
   })
-  ensure('fx-orbe', () => {
-    g.clear()
-    g.fillStyle(hex('#ffe56a'), 1)
-    g.fillCircle(10, 10, 9)
-    g.fillStyle(hex('#fff6c8'), 1)
-    g.fillCircle(10, 10, 5)
-    g.generateTexture('fx-orbe', 20, 20)
+
+  // Wider soft halo behind the beam
+  forceCanvas('fx-rayon-halo', 256, 64, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h)
+    const cy = h / 2
+    for (let y = 0; y < h; y++) {
+      const dy = Math.abs(y - cy) / (h / 2)
+      const a = Math.max(0, 1 - dy) ** 2.8 * 0.35
+      ctx.fillStyle = `rgba(255, 200, 60, ${a})`
+      ctx.fillRect(0, y, w, 1)
+    }
+    const tip = ctx.createLinearGradient(0, 0, w, 0)
+    tip.addColorStop(0.7, 'rgba(0,0,0,0)')
+    tip.addColorStop(1, 'rgba(0,0,0,0.7)')
+    ctx.globalCompositeOperation = 'destination-out'
+    ctx.fillStyle = tip
+    ctx.fillRect(0, 0, w, h)
+    ctx.globalCompositeOperation = 'source-over'
   })
+
+  forceCanvas('fx-orbe', 32, 32, (ctx, w, h) => {
+    const cx = w / 2, cy = h / 2
+    const grd = ctx.createRadialGradient(cx, cy, 1, cx, cy, 14)
+    grd.addColorStop(0, 'rgba(255,252,230,1)')
+    grd.addColorStop(0.35, 'rgba(255,220,80,0.95)')
+    grd.addColorStop(0.7, 'rgba(240,160,40,0.45)')
+    grd.addColorStop(1, 'rgba(240,160,40,0)')
+    ctx.fillStyle = grd
+    ctx.fillRect(0, 0, w, h)
+  })
+
+  forceCanvas('fx-spark', 12, 12, (ctx, w, h) => {
+    const cx = w / 2, cy = h / 2
+    const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 5)
+    grd.addColorStop(0, 'rgba(255,255,240,1)')
+    grd.addColorStop(0.5, 'rgba(255,220,100,0.9)')
+    grd.addColorStop(1, 'rgba(255,180,40,0)')
+    ctx.fillStyle = grd
+    ctx.fillRect(0, 0, w, h)
+  })
+
+  // Soft wind puff at native ~64px so scale 2 stays crisp-ish; drawn soft for NORMAL
+  forceCanvas('fx-vent', 72, 48, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h)
+    // three soft swirls along +X
+    const blobs = [
+      [16, 24, 18, 14, 0.8],
+      [36, 22, 20, 16, 0.9],
+      [56, 24, 16, 14, 0.75],
+    ]
+    for (const [bx, by, rw, rh, a] of blobs) {
+      const grd = ctx.createRadialGradient(bx, by, 1, bx, by, rw)
+      grd.addColorStop(0, `rgba(220,245,255,${a})`)
+      grd.addColorStop(0.45, `rgba(120,200,230,${a * 0.75})`)
+      grd.addColorStop(1, 'rgba(80,160,210,0)')
+      ctx.fillStyle = grd
+      ctx.beginPath()
+      ctx.ellipse(bx, by, rw, rh, 0, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    // motion streaks
+    ctx.globalAlpha = 0.35
+    ctx.strokeStyle = '#c8ecff'
+    ctx.lineWidth = 1.5
+    for (let i = 0; i < 5; i++) {
+      const yy = 10 + i * 5
+      ctx.beginPath()
+      ctx.moveTo(4, yy)
+      ctx.lineTo(28 + i * 3, yy - 1)
+      ctx.stroke()
+    }
+    ctx.globalAlpha = 1
+  })
+
   ensure('fx-nature', () => {
     g.clear()
     g.fillStyle(hex('#5cb85c'), 1)

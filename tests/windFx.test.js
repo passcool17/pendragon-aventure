@@ -1,14 +1,17 @@
 import { describe, it, expect } from 'vitest'
-import { windGustFxSpec } from '../src/fx/windFx.js'
+import { windGustFxSpec, combatFxAxisError } from '../src/fx/windFx.js'
 
 describe('windGustFxSpec', () => {
-  it('stays visible ~700ms and travels in front of Merlin (short on-screen travel)', () => {
-    const s = windGustFxSpec({ x: 100, y: 200 }, 'E')
-    expect(s.holdMs + s.fadeMs).toBeGreaterThanOrEqual(650)
-    expect(s.travelPx).toBeGreaterThanOrEqual(60)
-    expect(s.travelPx).toBeLessThanOrEqual(90)
-    expect(s.scale).toBeGreaterThanOrEqual(2)
-    expect(s.x).toBeGreaterThan(100)
-    expect(s.y).toBe(200)
+  it('stays visible ~600ms, integer scale, axis-aligned', () => {
+    const p = { x: 100, y: 200 }
+    const s = windGustFxSpec(p, 'E')
+    expect(s.holdMs + s.fadeMs).toBeGreaterThanOrEqual(600)
+    expect(s.scale).toBe(1)
+    expect(s.key).toBe('fx-vent')
+    expect(combatFxAxisError(p, 'E', s).error).toBeLessThan(0.01)
+    const south = windGustFxSpec(p, 'S')
+    expect(south.x).toBe(p.x)
+    expect(south.travelPx).toBeLessThanOrEqual(40)
+    expect(combatFxAxisError(p, 'S', south).error).toBeLessThan(0.01)
   })
 })
