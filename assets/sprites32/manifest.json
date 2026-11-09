@@ -1,0 +1,489 @@
+{
+  "pack": "merlin-foret-bretonne-sprites32",
+  "concept": "/workspace/crea/merlin-foret-bretonne/concept-gameplay.png",
+  "tile_size": 32,
+  "assets": {
+    "arbre-grand-1.png": {
+      "file": "arbre-grand-1.png",
+      "width": 96,
+      "height": 128,
+      "mode": "RGBA",
+      "role": "deco"
+    },
+    "arbre-grand-2.png": {
+      "file": "arbre-grand-2.png",
+      "width": 96,
+      "height": 128,
+      "mode": "RGBA",
+      "role": "deco"
+    },
+    "arc-attaque.png": {
+      "file": "arc-attaque.png",
+      "width": 48,
+      "height": 48,
+      "mode": "RGBA",
+      "role": "fx"
+    },
+    "barre-mana.png": {
+      "file": "barre-mana.png",
+      "width": 96,
+      "height": 10,
+      "mode": "RGBA",
+      "role": "ui"
+    },
+    "bloc-pierre.png": {
+      "file": "bloc-pierre.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "prop"
+    },
+    "brasero-off.png": {
+      "file": "brasero-off.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "prop"
+    },
+    "brasero-on.png": {
+      "file": "brasero-on.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "prop"
+    },
+    "buisson-1.png": {
+      "file": "buisson-1.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "deco"
+    },
+    "buisson-2.png": {
+      "file": "buisson-2.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "deco"
+    },
+    "canopee-bord.png": {
+      "file": "canopee-bord.png",
+      "width": 128,
+      "height": 64,
+      "mode": "RGBA",
+      "role": "atmosphere"
+    },
+    "chemin-bord-e.png": {
+      "file": "chemin-bord-e.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "chemin-bord-n.png": {
+      "file": "chemin-bord-n.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "chemin-bord-o.png": {
+      "file": "chemin-bord-o.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "chemin-bord-s.png": {
+      "file": "chemin-bord-s.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "chemin-coin-ext-ne.png": {
+      "file": "chemin-coin-ext-ne.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "chemin-coin-ext-no.png": {
+      "file": "chemin-coin-ext-no.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "chemin-coin-ext-se.png": {
+      "file": "chemin-coin-ext-se.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "chemin-coin-ext-so.png": {
+      "file": "chemin-coin-ext-so.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "chemin-coin-int-ne.png": {
+      "file": "chemin-coin-int-ne.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "chemin-coin-int-no.png": {
+      "file": "chemin-coin-int-no.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "chemin-coin-int-se.png": {
+      "file": "chemin-coin-int-se.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "chemin-coin-int-so.png": {
+      "file": "chemin-coin-int-so.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "chemin-terre.png": {
+      "file": "chemin-terre.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "coeur.png": {
+      "file": "coeur.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "ui"
+    },
+    "colonne-romaine-cassee.png": {
+      "file": "colonne-romaine-cassee.png",
+      "width": 32,
+      "height": 96,
+      "mode": "RGBA",
+      "role": "prop"
+    },
+    "colonne-romaine.png": {
+      "file": "colonne-romaine.png",
+      "width": 32,
+      "height": 96,
+      "mode": "RGBA",
+      "role": "prop"
+    },
+    "eau-berge-e.png": {
+      "file": "eau-berge-e.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "eau-berge-n.png": {
+      "file": "eau-berge-n.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "eau-berge-o.png": {
+      "file": "eau-berge-o.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "eau-berge-s.png": {
+      "file": "eau-berge-s.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "eau-coin-ext-ne.png": {
+      "file": "eau-coin-ext-ne.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "eau-coin-ext-no.png": {
+      "file": "eau-coin-ext-no.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "eau-coin-ext-se.png": {
+      "file": "eau-coin-ext-se.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "eau-coin-ext-so.png": {
+      "file": "eau-coin-ext-so.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "eau-coin-int-ne.png": {
+      "file": "eau-coin-int-ne.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "eau-coin-int-no.png": {
+      "file": "eau-coin-int-no.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "eau-coin-int-se.png": {
+      "file": "eau-coin-int-se.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "eau-coin-int-so.png": {
+      "file": "eau-coin-int-so.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "eau-ruisseau.png": {
+      "file": "eau-ruisseau.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "facade-sanctuaire.png": {
+      "file": "facade-sanctuaire.png",
+      "width": 192,
+      "height": 160,
+      "mode": "RGBA",
+      "role": "prop"
+    },
+    "fougere-1.png": {
+      "file": "fougere-1.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "deco"
+    },
+    "fougere-2.png": {
+      "file": "fougere-2.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "deco"
+    },
+    "gardien.png": {
+      "file": "gardien.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "role": "character"
+    },
+    "herbe-1.png": {
+      "file": "herbe-1.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "herbe-2.png": {
+      "file": "herbe-2.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "herbe-3.png": {
+      "file": "herbe-3.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "tile"
+    },
+    "icon-lumiere.png": {
+      "file": "icon-lumiere.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "ui"
+    },
+    "icon-nature.png": {
+      "file": "icon-nature.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "ui"
+    },
+    "icon-vent.png": {
+      "file": "icon-vent.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "ui"
+    },
+    "merlin-dos.png": {
+      "file": "merlin-dos.png",
+      "width": 32,
+      "height": 48,
+      "mode": "RGBA",
+      "role": "character"
+    },
+    "merlin-face.png": {
+      "file": "merlin-face.png",
+      "width": 32,
+      "height": 48,
+      "mode": "RGBA",
+      "role": "character"
+    },
+    "merlin-profil-droite.png": {
+      "file": "merlin-profil-droite.png",
+      "width": 32,
+      "height": 48,
+      "mode": "RGBA",
+      "role": "character"
+    },
+    "muret-ruine.png": {
+      "file": "muret-ruine.png",
+      "width": 64,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "prop"
+    },
+    "nappe-brume.png": {
+      "file": "nappe-brume.png",
+      "width": 128,
+      "height": 64,
+      "mode": "RGBA",
+      "role": "atmosphere"
+    },
+    "ombre.png": {
+      "file": "ombre.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "character"
+    },
+    "orbe.png": {
+      "file": "orbe.png",
+      "width": 16,
+      "height": 16,
+      "mode": "RGBA",
+      "role": "fx"
+    },
+    "pont-lianes.png": {
+      "file": "pont-lianes.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "prop"
+    },
+    "pont-pierre.png": {
+      "file": "pont-pierre.png",
+      "width": 128,
+      "height": 64,
+      "mode": "RGBA",
+      "role": "prop"
+    },
+    "rafale-vent.png": {
+      "file": "rafale-vent.png",
+      "width": 48,
+      "height": 48,
+      "mode": "RGBA",
+      "role": "fx"
+    },
+    "rayon-lumiere.png": {
+      "file": "rayon-lumiere.png",
+      "width": 128,
+      "height": 16,
+      "mode": "RGBA",
+      "role": "fx"
+    },
+    "rocher-grand.png": {
+      "file": "rocher-grand.png",
+      "width": 64,
+      "height": 48,
+      "mode": "RGBA",
+      "role": "prop"
+    },
+    "rocher-petit.png": {
+      "file": "rocher-petit.png",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA",
+      "role": "prop"
+    },
+    "totem-off.png": {
+      "file": "totem-off.png",
+      "width": 32,
+      "height": 48,
+      "mode": "RGBA",
+      "role": "prop"
+    },
+    "totem-on.png": {
+      "file": "totem-on.png",
+      "width": 32,
+      "height": 48,
+      "mode": "RGBA",
+      "role": "prop"
+    },
+    "villageois.png": {
+      "file": "villageois.png",
+      "width": 32,
+      "height": 48,
+      "mode": "RGBA",
+      "role": "character"
+    }
+  },
+  "tile_autotile_logic": {
+    "herbe": "Variants herbe-1/2/3 are interchangeable fill tiles; mix for less repetition.",
+    "chemin": {
+      "fill": "chemin-terre.png",
+      "edges": "chemin-bord-{n,s,e,o}.png — side facing the letter is path, opposite blends to grass.",
+      "corners_ext": "chemin-coin-ext-{ne,no,se,so}.png — path fills the named outer corner.",
+      "corners_int": "chemin-coin-int-{ne,no,se,so}.png — grass pocket in the named corner, path elsewhere.",
+      "neighbor_rule": "Place edge/corner so the path side abuts chemin-terre or another path edge; grass side abuts herbe-*."
+    },
+    "eau": {
+      "fill": "eau-ruisseau.png",
+      "edges": "eau-berge-{n,s,e,o}.png — water on the named side, grass on the opposite (with pebble hints on berges).",
+      "corners_ext": "eau-coin-ext-{ne,no,se,so}.png",
+      "corners_int": "eau-coin-int-{ne,no,se,so}.png",
+      "neighbor_rule": "Same adjacency logic as chemin, but primary material is water."
+    }
+  },
+  "scene_effects": [
+    "soft blue mist wash alpha~32",
+    "radial vignette darkening + cool distance tint — reproduce in game"
+  ],
+  "notes": [
+    "deciduous trees",
+    "abstract totem runes only",
+    "brasero-on lit",
+    "magenta cleaned"
+  ]
+}
