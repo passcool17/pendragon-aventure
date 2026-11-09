@@ -1,12 +1,54 @@
 # Merlin : Les Brumes de Bretagne
 
-Aventure Zelda-like top-down (Phaser 3), original, ambiance Bretagne post-romaine brumeuse. Titre provisoire.
+Aventure Zelda-like top-down (Phaser 3), originale, ambiance Bretagne post-romaine brumeuse.
 
-**État :** plan d’implémentation écrit, en attente de revue avant code.
+**Jouer :** https://passcool17.github.io/pendragon-aventure/
 
-- Spec : [`docs/superpowers/specs/2026-11-09-merlin-zelda-like-design.md`](docs/superpowers/specs/2026-11-09-merlin-zelda-like-design.md)
-- Plan : [`docs/superpowers/plans/2026-11-09-merlin-les-brumes-de-bretagne.md`](docs/superpowers/plans/2026-11-09-merlin-les-brumes-de-bretagne.md)
-- Concept art : [`assets/concept/concept-gameplay.png`](assets/concept/concept-gameplay.png)
-- Suivi court : [`GAME.md`](GAME.md)
+**Dépôt :** https://github.com/passcool17/pendragon-aventure
 
-Dépôt **local uniquement** pour l’instant (pas de remote, pas de push). Personnages fictifs ; aucune adaptation littérale d’une série ou d’un casting.
+## Contrôles
+
+| Entrée | Action |
+|--------|--------|
+| Flèches / WASD | Déplacement |
+| Espace | Mêlée (bâton) |
+| E | Interagir / avancer le dialogue |
+| 1 / 2 / 3 | Sort Lumière / Vent / Nature |
+| F | Lancer le sort actif |
+| Échap | Pause |
+| Tactile | Pad + boutons A / F / cycle |
+
+## Debug (saut de niveau)
+
+Ajouter à l’URL Pages ou locale :
+
+- `?level=forest` — démarre en forêt (quête + sorts utiles)
+- `?level=ruins` — ruines avec fragment forêt
+- `?level=sanctuary` — sanctuaire
+- `?level=boss-final` — gardien final (3 fragments + 3 sorts)
+- `?level=hub&spells=all&fragments=all` — hub tout débloqué
+- `?god=1` — cœurs max
+
+Exemples :
+
+- https://passcool17.github.io/pendragon-aventure/?level=forest
+- https://passcool17.github.io/pendragon-aventure/?level=boss-final
+
+## Dev local
+
+```bash
+npm install
+npm test
+npm run dev
+npm run build
+```
+
+Base Vite : `/pendragon-aventure/` (GitHub Pages projet).
+
+## Docs
+
+- Spec : `docs/superpowers/specs/2026-11-09-merlin-zelda-like-design.md`
+- Plan : `docs/superpowers/plans/2026-11-09-merlin-les-brumes-de-bretagne.md`
+- Suivi : `GAME.md`
+
+Placeholders graphiques générés en code. Assets finaux / audio : plus tard (Créa / Voix / SUNO). Personnages fictifs.

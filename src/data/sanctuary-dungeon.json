@@ -1,0 +1,56 @@
+{
+  "id": "sanctuary-dungeon",
+  "width": 14,
+  "height": 10,
+  "spawn": {
+    "x": 2,
+    "y": 5
+  },
+  "tiles": [
+    "##############",
+    "#............#",
+    "#............#",
+    "#............#",
+    "#............#",
+    "#X..........N#",
+    "#............#",
+    "#............#",
+    "#............#",
+    "##############"
+  ],
+  "exits": [
+    {
+      "to": "sanctuary",
+      "tile": [
+        1,
+        5
+      ],
+      "spawnId": "from-dungeon"
+    },
+    {
+      "to": "sanctuary-boss",
+      "tile": [
+        12,
+        5
+      ],
+      "spawnId": "boss"
+    }
+  ],
+  "enemies": [
+    {
+      "type": "root",
+      "x": 7,
+      "y": 3
+    }
+  ],
+  "puzzles": [],
+  "chests": [],
+  "checkpoints": [
+    {
+      "id": "sanctuary-dungeon",
+      "x": 2,
+      "y": 5
+    }
+  ],
+  "npcs": []
+}

@@ -15,6 +15,5 @@ export function createGame(parent = 'game', sceneList = []) {
 }
 
 if (typeof document !== 'undefined' && document.getElementById('game')) {
-  // scenes registered after modules load — see boot below
   import('./boot.js').then(({ startGame }) => startGame())
 }

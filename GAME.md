@@ -2,33 +2,47 @@
 
 ## Concept
 
-Zelda-like top-down : Merlin explore un hub villageois, une forêt brumeuse, des ruines romaines et un sanctuaire, puis affronte un gardien. Trois sorts (Lumière, Vent, Nature) ouvrent la voie. Ambiance Bretagne post-romaine ; histoire et personnages **originaux / fictifs**.
+Zelda-like top-down : hub villageois → forêt (Lumière) → ruines (Vent) → sanctuaire (Nature) → Gardien des Brumes. Personnages fictifs ; ambiance Bretagne post-romaine.
 
-## Contrôles prévus
+## Contrôles
 
 | Entrée | Action |
 |--------|--------|
 | Flèches / WASD | Déplacement |
-| Espace | Mêlée (bâton) |
+| Espace | Mêlée |
 | E | Interagir / dialogue |
-| 1 / 2 / 3 | Sort Lumière / Vent / Nature |
-| F ou icône | Lancer le sort actif |
+| 1 / 2 / 3 | Lumière / Vent / Nature |
+| F | Lancer le sort |
 | Échap | Pause |
-| Tactile | Pad virtuel + boutons mêlée / sort / cycle |
+| Tactile | Pad + A / F / cycle |
 
 ## État
 
-**Plan prêt, attente revue** (`docs/superpowers/plans/2026-11-09-merlin-les-brumes-de-bretagne.md`). Spec approuvée. Pas de code de jeu, pas de publication, pas de remote.
+**Publié sur GitHub Pages** (prototype jouable, placeholders code).  
+URL : https://passcool17.github.io/pendragon-aventure/  
+Repo : https://github.com/passcool17/pendragon-aventure  
 
-## Documents
+Vérification Chrome manuelle : à faire par Pascal (contrôles + captures). Tests Vitest + build Vite verts en CI/local.
 
-- Spec : `docs/superpowers/specs/2026-11-09-merlin-zelda-like-design.md`
-- Plan : `docs/superpowers/plans/2026-11-09-merlin-les-brumes-de-bretagne.md`
-- Concept : `assets/concept/concept-gameplay.png`
+## Instructions de test rapide
 
-## Prochaines idées (hors v1 tant que non tranchées)
+1. Ouvrir l’URL Pages (ou `?level=hub`).
+2. **Nouvelle partie** → parler à **Branoc** (E) → sortir au sud vers la forêt.
+3. **Lumière** : touche `1`, viser un brasero, `F`. Allumer les 3. Entrée nord du donjon → boss → fragment.
+4. Retour hub. Sortie **est** → ruines. **Vent** (`2`+`F`) pousse les blocs sur les dalles. Donjon → boss → fragment.
+5. Hub **ouest** → sanctuaire. Près d’une graine, **Nature** (`3`+`F`) pour ponts. Donjon → boss → fragment.
+6. Hub **nord** → gardien final : `F` avec chaque sort sur les totems, puis mêlée pendant la vulnérabilité.
 
-- Cœur bonus caché derrière un mur destructible à la Lumière.
-- Variante de boss de région avec motif d’attaque télégraphié.
-- Petite musique de hub (SUNO plus tard) et footsteps synthétiques.
-- Mode « brume dense » cosmétique sans changer les collisions.
+### Raccourcis debug
+
+- `?level=forest` — tester Lumière / braseros
+- `?level=ruins` — tester Vent / blocs
+- `?level=sanctuary` — tester Nature / ponts
+- `?level=boss-final` — combat final
+- `?spells=all&fragments=all` — tout débloqué au hub
+
+## Prochaines idées
+
+- Sprites / tileset Créa ; musique SUNO ; voix courte.
+- Polish boss de région (motifs télégraphiés).
+- Cœur bonus mur cassable à la Lumière.
