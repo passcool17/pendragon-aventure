@@ -18,7 +18,13 @@ Zelda-like top-down : Merlin explore un hub villageois, une forêt brumeuse, des
 
 ## État
 
-**Conception approuvée, attente revue de la spec** (`docs/superpowers/specs/2026-11-09-merlin-zelda-like-design.md`). Pas de code de jeu, pas de plan d’implémentation, pas de publication.
+**Plan prêt, attente revue** (`docs/superpowers/plans/2026-11-09-merlin-les-brumes-de-bretagne.md`). Spec approuvée. Pas de code de jeu, pas de publication, pas de remote.
+
+## Documents
+
+- Spec : `docs/superpowers/specs/2026-11-09-merlin-zelda-like-design.md`
+- Plan : `docs/superpowers/plans/2026-11-09-merlin-les-brumes-de-bretagne.md`
+- Concept : `assets/concept/concept-gameplay.png`
 
 ## Prochaines idées (hors v1 tant que non tranchées)
 
