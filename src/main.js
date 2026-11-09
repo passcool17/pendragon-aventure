@@ -1,45 +1,25 @@
 import Phaser from 'phaser'
+import { GAME_CONFIG } from './gameConfig.js'
 
-const GAME_W = 384
-const GAME_H = 288
-
-function applyIntegerScale(game) {
-  const resize = () => {
-    const sx = Math.floor(window.innerWidth / GAME_W)
-    const sy = Math.floor(window.innerHeight / GAME_H)
-    const s = Math.max(1, Math.min(sx, sy))
-    const canvas = game.canvas
-    canvas.style.width = `${GAME_W * s}px`
-    canvas.style.height = `${GAME_H * s}px`
-    canvas.style.imageRendering = 'pixelated'
-    canvas.style.imageRendering = 'crisp-edges'
-  }
-  window.addEventListener('resize', resize)
-  resize()
-  game.events.on('destroy', () => window.removeEventListener('resize', resize))
-}
+export { GAME_CONFIG }
 
 export function createGame(parent = 'game', sceneList = []) {
-  const game = new Phaser.Game({
+  return new Phaser.Game({
     type: Phaser.AUTO,
     parent,
-    width: GAME_W,
-    height: GAME_H,
-    pixelArt: true,
-    roundPixels: true,
+    width: GAME_CONFIG.width,
+    height: GAME_CONFIG.height,
+    pixelArt: GAME_CONFIG.pixelArt,
+    roundPixels: GAME_CONFIG.roundPixels,
     antialias: false,
     backgroundColor: '#0b1210',
     physics: { default: 'arcade', arcade: { debug: false } },
     scale: {
-      mode: Phaser.Scale.NONE,
+      mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
-    },
-    callbacks: {
-      postBoot: (g) => applyIntegerScale(g),
     },
     scene: sceneList,
   })
-  return game
 }
 
 if (typeof document !== 'undefined' && document.getElementById('game')) {

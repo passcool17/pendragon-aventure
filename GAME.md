@@ -18,7 +18,7 @@ Zelda-like top-down : hub → forêt (Lumière) → ruines (Vent) → sanctuaire
 
 ## État
 
-**Publié — sprites Créa intégrés** + scale pixel entier, déco forêt/ruines, HUD cœurs/mana-pip/icônes.  
+**Publié — sprites Créa + Scale.FIT** (corrigé décalage clic/centrage), sol moins rayé, FX mêlée/orbe plus visibles.  
 URL : https://passcool17.github.io/pendragon-aventure/  
 Repo : https://github.com/passcool17/pendragon-aventure  
 

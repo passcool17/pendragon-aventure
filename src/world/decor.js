@@ -1,4 +1,4 @@
-/** Deterministic decoration placement — never on required walkables/exits/spawns. */
+/** Deterministic decoration — never on required walkables/exits/spawns. */
 
 export function cellHash(x, y, salt = 0) {
   return Math.abs((x * 374761 + y * 668265 + salt * 127) | 0) % 1000
@@ -45,7 +45,7 @@ function neighborsFloor(level, x, y) {
 }
 
 /**
- * @returns {{ key: string, x: number, y: number, originY?: number }[]}
+ * @returns {{ key: string, x: number, y: number, originY?: number, scale?: number, alpha?: number, tint?: number }[]}
  */
 export function planDecor(level) {
   const out = []
@@ -66,12 +66,30 @@ export function planDecor(level) {
           out.push({ key: 'ruin-column', x, y, originY: 1 })
         }
       }
-      // ferns just inside floor near walls
-      if (forest && (ch === '.' || ch === 'C') && h % 17 === 2) {
-        if (!isExitOrSpawn(level, x, y) && neighborsFloor(level, x, y)) {
-          // only if next to wall
-          const nearWall = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => level.tiles[y + dy]?.[x + dx] === '#')
-          if (nearWall) out.push({ key: 'fern', x, y, originY: 1 })
+      // Sparse floor clutter (breaks wallpaper without blocking paths)
+      if ((ch === '.' || ch === 'C') && !isExitOrSpawn(level, x, y)) {
+        if (h % 19 === 4) {
+          out.push({
+            key: 'fern', x, y, originY: 1,
+            scale: 0.45 + (h % 3) * 0.08,
+            alpha: 0.75,
+            tint: 0x6a8f5a,
+          })
+        } else if (h % 31 === 6) {
+          // pebble: tiny tinted block
+          out.push({
+            key: 'block', x, y, originY: 0.5,
+            scale: 0.22,
+            alpha: 0.7,
+            tint: 0x8a8070,
+          })
+        } else if (ruins && h % 37 === 8) {
+          out.push({
+            key: 'spell-light', x, y, originY: 0.5,
+            scale: 0.35,
+            alpha: 0.35,
+            tint: 0xb0a090,
+          })
         }
       }
     }
@@ -79,11 +97,15 @@ export function planDecor(level) {
   return out
 }
 
-/** Floor tint/flip variation — pure. */
+/**
+ * Floor variation — avoid (x+y)%2 checkerboard which amplifies vertical tile seams.
+ */
 export function floorStyle(x, y) {
   const h = cellHash(x, y, 3)
+  const tints = [0xffffff, 0xfbfbf8, 0xf6f7f4, 0xfaf9f5]
   return {
-    flipX: (x + y) % 2 === 0,
-    tint: h % 3 === 0 ? 0xdde8dd : h % 3 === 1 ? 0xffffff : 0xe8f0e4,
+    flipX: (h % 2) === 0,
+    flipY: (h % 5) === 0,
+    tint: tints[h % 4],
   }
 }

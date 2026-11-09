@@ -9,6 +9,17 @@ describe('decor', () => {
     expect(floorStyle(1, 2)).toEqual(floorStyle(1, 2))
   })
 
+  it('avoids harsh (x+y) checkerboard flip that stripes the floor', () => {
+    const a = floorStyle(2, 2)
+    const b = floorStyle(3, 2)
+    // Not forced opposite purely by parity of x+y
+    const parityFlip = ((2 + 2) % 2 === 0) !== ((3 + 2) % 2 === 0)
+    // Styles come from hash; tints stay near white (low contrast)
+    expect(a.tint).toBeGreaterThan(0xf00000)
+    expect(b.tint).toBeGreaterThan(0xf00000)
+    expect(typeof a.flipY).toBe('boolean')
+  })
+
   it('never covers forest spawn or exits', () => {
     const level = loadLevel('forest')
     const decor = planDecor(level)

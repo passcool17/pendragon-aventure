@@ -135,7 +135,8 @@ export class WorldScene extends Phaser.Scene {
         const img = this.add.image(wx, wy, key)
         if (key === 'tile-floor') {
           const st = floorStyle(x, y)
-          img.setFlipX(st.flipX)
+          img.setFlipX(!!st.flipX)
+          img.setFlipY(!!st.flipY)
           img.setTint(st.tint)
         }
         this.tileImg.set(`${x},${y}`, img)
@@ -157,8 +158,12 @@ export class WorldScene extends Phaser.Scene {
     const items = planDecor(this.level)
     for (const d of items) {
       const { x: wx, y: wy } = tileToWorld(d.x, d.y, TILE)
-      const spr = this.add.image(wx, wy, d.key).setDepth(d.key === 'tree' || d.key === 'ruin-column' ? 60 : 40)
-      if (d.originY) spr.setOrigin(0.5, d.originY)
+      const depth = d.key === 'tree' || d.key === 'ruin-column' ? 60 : 35
+      const spr = this.add.image(wx, wy, d.key).setDepth(depth)
+      if (d.originY != null) spr.setOrigin(0.5, d.originY)
+      if (d.scale) spr.setScale(d.scale)
+      if (d.alpha != null) spr.setAlpha(d.alpha)
+      if (d.tint != null) spr.setTint(d.tint)
     }
   }
 
@@ -374,12 +379,14 @@ export class WorldScene extends Phaser.Scene {
     const arc = this.add.image(this.player.x + off.x, this.player.y + off.y, 'melee-arc')
       .setDepth(200)
       .setRotation(FACING_ANGLE[this.facing] || 0)
-      .setAlpha(0.95)
+      .setAlpha(1)
+      .setScale(1.5)
+      .setBlendMode(Phaser.BlendModes.ADD)
     this.tweens.add({
       targets: arc,
       alpha: 0,
-      scale: 1.35,
-      duration: 160,
+      scale: 2.1,
+      duration: 320,
       onComplete: () => arc.destroy(),
     })
     this.cameras.main.shake(60, 0.004)
@@ -426,22 +433,23 @@ export class WorldScene extends Phaser.Scene {
     const { vx, vy } = lightOrbVelocity(this.facing, 180)
     const spr = this.add.image(this.player.x + off.x, this.player.y + off.y, 'light-orb')
       .setDepth(220)
+      .setScale(2.2)
       .setBlendMode(Phaser.BlendModes.ADD)
     const glow = this.add.image(spr.x, spr.y, 'spell-light')
       .setDepth(219)
-      .setScale(2)
-      .setAlpha(0.55)
+      .setScale(3.2)
+      .setAlpha(0.75)
       .setBlendMode(Phaser.BlendModes.ADD)
     this.projectiles.push({
       type: 'projectile',
       spell: effect.spell,
       wx: spr.x,
       wy: spr.y,
-      vx,
-      vy,
+      vx: vx * 0.72,
+      vy: vy * 0.72,
       spr,
       glow,
-      life: 1.1,
+      life: 1.35,
       trail: 0,
     })
     this.cameras.main.shake(40, 0.003)
@@ -462,11 +470,12 @@ export class WorldScene extends Phaser.Scene {
           .setDepth(218)
           .setAlpha(0.7)
           .setBlendMode(Phaser.BlendModes.ADD)
+        spark.setScale(1.6)
         this.tweens.add({
           targets: spark,
           alpha: 0,
-          scale: 0.3,
-          duration: 180,
+          scale: 0.4,
+          duration: 280,
           onComplete: () => spark.destroy(),
         })
       }
@@ -523,7 +532,7 @@ export class WorldScene extends Phaser.Scene {
         y: puff.y + d[1] * (28 + i * 10),
         alpha: 0,
         scaleX: 1.4,
-        duration: 220 + i * 30,
+        duration: 300 + i * 40,
         onComplete: () => puff.destroy(),
       })
     }
