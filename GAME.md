@@ -39,3 +39,8 @@ Crédits : **Créa** (`sprites32` + manifest). Concept cible : Pascal.
 - Vent : rafale large, hold ~180 ms puis fade (total ≥300 ms), depth 12000
 - Autotile eau : orientation berge/coins corrigée + coins intérieurs diagonaux
 - Favicon : `favicon.png` / `favicon.ico` (sprite icon-lumiere)
+
+## Sol lisse (anti-régression wang)
+
+Chemin / ruisseau : **blobs** cercle+capsule (`smoothGround`) + tampon texture masqué — plus d’autotile 47 cases.
+Vent : rafale voyage ~700 ms (hold+fade+trail).

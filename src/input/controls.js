@@ -20,9 +20,12 @@ export function cycleSpell(unlocked, current, dir) {
   return unlocked[next]
 }
 
+/** Edge-latch tracker: brief keydown/keyup before the next frame still registers. */
 export function createKeyTracker(scene) {
   const down = {}
+  const latched = {}
   const onDown = (e) => {
+    if (!down[e.code]) latched[e.code] = true
     down[e.code] = true
     if (e.code === 'Space' || e.code === 'Tab') e.preventDefault()
   }
@@ -36,6 +39,10 @@ export function createKeyTracker(scene) {
   return {
     down,
     consume(code) {
+      if (latched[code]) {
+        latched[code] = false
+        return true
+      }
       if (!down[code]) return false
       down[code] = false
       return true

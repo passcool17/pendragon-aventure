@@ -9,8 +9,11 @@ import { trySelectSpell } from '../input/spellSelect.js'
 import { facingFromVector, canMelee, MELEE_DAMAGE, SPELL_COST } from '../combat/combat.js'
 import { spendMana } from '../state/gameState.js'
 import { createEnemy, damageEnemy } from '../world/enemies.js'
-import { isWalkable, tileToWorld, worldToTile, buildWalkGrid, isSolidTile } from '../world/tilemap.js'
+import { isWalkable, tileToWorld, worldToTile, buildWalkGrid } from '../world/tilemap.js'
 import { textureForCell } from '../world/autotile.js'
+import {
+  pathCells, waterCells, bridgeCells, drawSoftBlob, stampMaskedTexture, pointInBlob,
+} from '../world/smoothGround.js'
 import { getDialogue, canEnter } from '../world/dialogue.js'
 import { lightBrazier, extinguishBrazier, allBraziersLit } from '../puzzles/braziers.js'
 import { pushBlock } from '../puzzles/windPush.js'
@@ -111,23 +114,44 @@ export class WorldScene extends Phaser.Scene {
 
   drawTiles() {
     this.walls = this.physics.add.staticGroup()
+    this.waterCells = waterCells(this.level.tiles)
+    this.bridgeCells = bridgeCells(this.level.tiles)
+    this.pathCells = pathCells(this.level.tiles)
+
+    // Grass underlay everywhere (no wang path/water tiles → no checker / blue teeth)
     for (let y = 0; y < this.level.height; y++) {
       for (let x = 0; x < this.level.width; x++) {
-        const ch = this.level.tiles[y][x]
         const key = textureForCell(this.level.tiles, x, y)
         const { x: wx, y: wy } = tileToWorld(x, y, TILE)
-        // under bridge draw water then skip pont texture as tile (prop handles bridge art)
-        if (ch === 'P') {
-          this.add.image(wx, wy, 'eau-ruisseau').setDepth(0)
-        } else {
-          const tex = this.textures.exists(key) ? key : 'herbe-1'
-          this.add.image(wx, wy, tex).setDepth(0)
-        }
-        if (isSolidTile(ch) && ch !== 'P') {
+        const tex = this.textures.exists(key) ? key : 'herbe-1'
+        this.add.image(wx, wy, tex).setDepth(0)
+        const ch = this.level.tiles[y][x]
+        if (ch === '#') {
           const wall = this.walls.create(wx, wy, 'herbe-1')
           wall.setVisible(false)
           wall.refreshBody()
         }
+      }
+    }
+
+    // Smooth water + path blobs (texture stamp + soft rim)
+    const waterG = this.add.graphics().setDepth(1)
+    drawSoftBlob(waterG, this.waterCells, TILE, 0x2a5a6e, 0x1a3a48)
+    stampMaskedTexture(this, 'eau-ruisseau', this.waterCells, TILE, 2, 0xffffff)
+
+    const pathG = this.add.graphics().setDepth(3)
+    drawSoftBlob(pathG, this.pathCells, TILE, 0xa8844a, 0x7a5e32)
+    stampMaskedTexture(this, 'chemin-terre', this.pathCells, TILE, 4, 0xffffff)
+
+    // Light bank pebbles along water edge (decor hint)
+    const bridgeSet = new Set(this.bridgeCells.map((c) => `${c.x},${c.y}`))
+    for (const c of this.waterCells) {
+      if (bridgeSet.has(`${c.x},${c.y}`)) continue
+      const h = (c.x * 13 + c.y * 7) % 5
+      if (h !== 0) continue
+      const { x: wx, y: wy } = tileToWorld(c.x, c.y, TILE)
+      if (this.textures.exists('rocher-petit')) {
+        this.add.image(wx + 10, wy - 6, 'rocher-petit').setDepth(5).setScale(0.45).setAlpha(0.85)
       }
     }
   }
@@ -317,7 +341,14 @@ export class WorldScene extends Phaser.Scene {
     this.player.body.setVelocity(x * SPEED, y * SPEED)
 
     const tile = worldToTile(this.player.x, this.player.y, TILE)
-    if (!isWalkable(this.level, tile.x, tile.y, this.extraWalk) || this.blockAt(tile.x, tile.y)) {
+    const inWater = pointInBlob(
+      this.player.x, this.player.y, this.waterCells || [], TILE, this.bridgeCells || [],
+    )
+    if (
+      !isWalkable(this.level, tile.x, tile.y, this.extraWalk)
+      || this.blockAt(tile.x, tile.y)
+      || inWater
+    ) {
       this.player.x -= x * 6
       this.player.y -= y * 6
     }
@@ -508,31 +539,30 @@ export class WorldScene extends Phaser.Scene {
   castWind(origin) {
     const dir = this.facing
     const tiles = windGustTiles(origin, dir)
-    // Root cause of invisible Vent: tiny puffs faded alpha from t=0 (~280ms),
-    // so captures "just after" F showed nothing. Hold a large gust opaque then fade.
     const spec = windGustFxSpec(this.player, dir)
-    const gust = this.add.image(spec.x, spec.y, spec.key)
-      .setDepth(spec.depth)
-      .setRotation(spec.rotation)
-      .setScale(spec.scale)
-      .setAlpha(1)
-    const trail = this.add.image(spec.x, spec.y, spec.key)
-      .setDepth(spec.depth)
-      .setRotation(spec.rotation)
-      .setScale(spec.scale * 0.75)
-      .setAlpha(0.85)
-      .setTint(0xa8e8ff)
     const d = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }[dir]
-    this.tweens.add({
-      targets: [gust, trail],
-      x: gust.x + d[0] * 36,
-      y: gust.y + d[1] * 36,
-      scale: spec.endScale,
-      alpha: 0,
-      duration: spec.fadeMs,
-      delay: spec.holdMs,
-      onComplete: () => { gust.destroy(); trail.destroy() },
-    })
+    const spawn = (delay, scaleMul, tint) => {
+      const img = this.add.image(spec.x, spec.y, spec.key)
+        .setDepth(spec.depth)
+        .setRotation(spec.rotation)
+        .setScale(spec.scale * scaleMul)
+        .setAlpha(1)
+      if (tint) img.setTint(tint)
+      this.tweens.add({
+        targets: img,
+        x: spec.x + d[0] * spec.travelPx,
+        y: spec.y + d[1] * spec.travelPx,
+        scale: spec.endScale * scaleMul,
+        alpha: 0,
+        duration: spec.holdMs + spec.fadeMs,
+        delay,
+        ease: 'Sine.easeOut',
+        onComplete: () => img.destroy(),
+      })
+    }
+    spawn(0, 1, null)
+    spawn(spec.trailDelayMs, 0.85, 0xa8e8ff)
+    spawn(spec.trailDelayMs * 2, 0.7, 0xd0f0ff)
     this.cameras.main.shake(60, 0.004)
     const grid = buildWalkGrid(this.level, this.extraWalk)
     const hit = new Set(tiles.map((t) => `${t.x},${t.y}`))

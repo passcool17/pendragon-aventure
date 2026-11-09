@@ -4,7 +4,7 @@ import { GAME_CONFIG } from './gameConfig.js'
 export { GAME_CONFIG }
 
 export function createGame(parent = 'game', sceneList = []) {
-  return new Phaser.Game({
+  const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,
     width: GAME_CONFIG.width,
@@ -20,6 +20,8 @@ export function createGame(parent = 'game', sceneList = []) {
     },
     scene: sceneList,
   })
+  if (typeof window !== 'undefined') window.__MERLIN_GAME = game
+  return game
 }
 
 if (typeof document !== 'undefined' && document.getElementById('game')) {
