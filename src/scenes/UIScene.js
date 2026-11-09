@@ -6,6 +6,8 @@ export class UIScene extends Phaser.Scene {
   constructor() { super('UIScene') }
 
   create() {
+    this.cameras.main.setBackgroundColor('rgba(0,0,0,0)')
+    this.cameras.main.clearBeforeRender = false
     this.layout = hudLayout(GAME_CONFIG.width, GAME_CONFIG.height)
     this.hearts = []
     const m = this.layout.mana

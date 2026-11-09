@@ -20,7 +20,7 @@ export function cycleSpell(unlocked, current, dir) {
   return unlocked[next]
 }
 
-/** Edge-latch tracker: brief keydown/keyup before the next frame still registers. */
+/** Edge-only latch: keydown sets a one-shot; held keys do not re-fire consume(). */
 export function createKeyTracker(scene) {
   const down = {}
   const latched = {}
@@ -39,12 +39,8 @@ export function createKeyTracker(scene) {
   return {
     down,
     consume(code) {
-      if (latched[code]) {
-        latched[code] = false
-        return true
-      }
-      if (!down[code]) return false
-      down[code] = false
+      if (!latched[code]) return false
+      latched[code] = false
       return true
     },
   }

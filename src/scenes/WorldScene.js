@@ -12,7 +12,7 @@ import { createEnemy, damageEnemy } from '../world/enemies.js'
 import { isWalkable, tileToWorld, worldToTile, buildWalkGrid } from '../world/tilemap.js'
 import {
   pathCells, waterCells, bridgeCells, drawSoftBlob, drawDirtPath, pathEdgeScatter, drawGrassField,
-  stampMaskedTexture, pointInBlob,
+  pointInBlob,
 } from '../world/smoothGround.js'
 import { getDialogue, canEnter } from '../world/dialogue.js'
 import { lightBrazier, extinguishBrazier, allBraziersLit } from '../puzzles/braziers.js'
@@ -135,10 +135,17 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    // Smooth water (texture stamp OK — no tuft grid) + unified dirt path (no chemin-terre)
+    // Water + path as soft blobs only (no GeometryMask/RenderTexture — WebGL stencil
+    // was clipping combat FX at depth 12000 in real Chrome).
     const waterG = this.add.graphics().setDepth(1)
-    drawSoftBlob(waterG, this.waterCells, TILE, 0x2a5a6e, 0x1a3a48)
-    stampMaskedTexture(this, 'eau-ruisseau', this.waterCells, TILE, 2, 0xffffff)
+    drawSoftBlob(waterG, this.waterCells, TILE, 0x2f6a82, 0x1a3a48)
+    // subtle water shimmer without masks
+    waterG.fillStyle(0x7ec8e3, 0.22)
+    for (const c of this.waterCells) {
+      const h = (c.x * 17 + c.y * 31) | 0
+      if (h % 3) continue
+      waterG.fillCircle(c.x * TILE + 10 + (h % 12), c.y * TILE + 8 + ((h * 3) % 10), 2)
+    }
 
     const pathG = this.add.graphics().setDepth(3)
     drawDirtPath(pathG, this.pathCells, TILE)
@@ -446,20 +453,40 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+
+  /** Combat VFX above decor; NORMAL blend; never inherits GeometryMask. */
+  spawnCombatFx(x, y, key, rotation = 0, scale = 1) {
+    const img = this.add.image(x, y, key)
+      .setDepth(25000)
+      .setScrollFactor(1)
+      .setOrigin(0.5, 0.5)
+      .setRotation(rotation)
+      .setScale(scale)
+      .setAlpha(1)
+      .setBlendMode(Phaser.BlendModes.NORMAL)
+    if (typeof img.clearMask === 'function') img.clearMask(true)
+    return img
+  }
+
   doMelee() {
     const tile = worldToTile(this.player.x, this.player.y, TILE)
     const target = meleeTargetTile(tile, this.facing)
-    const off = forwardOffset(this.facing, 20)
-    // Root cause of invisible arc: depth ≈ player.y (~300) sat under trees/canopy (higher y / depth 900).
-    // Keep FX on a UI-like layer above all world decor for ~250ms.
-    const arc = this.add.image(this.player.x + off.x, this.player.y + off.y, 'arc-attaque')
-      .setDepth(12000)
-      .setRotation(FACING_ANGLE[this.facing] || 0)
-      .setScale(1.6)
-      .setAlpha(1)
-    this.tweens.add({
-      targets: arc, alpha: 0, scale: 2.1, duration: 260,
-      onComplete: () => arc.destroy(),
+    const off = forwardOffset(this.facing, 22)
+    const arc = this.spawnCombatFx(
+      this.player.x + off.x, this.player.y + off.y, 'arc-attaque', FACING_ANGLE[this.facing] || 0, 2.4,
+    )
+    // Explicit hold then fade (avoid delta-driven tween edge cases in WebGL)
+    this.time.delayedCall(200, () => {
+      if (!arc.active) return
+      this.tweens.add({
+        targets: arc,
+        alpha: 0,
+        scaleX: 3.0,
+        scaleY: 3.0,
+        duration: 300,
+        ease: 'Sine.easeOut',
+        onComplete: () => arc.destroy(),
+      })
     })
     this.cameras.main.shake(50, 0.003)
     this.enemies.forEach((e, i) => {
@@ -500,13 +527,11 @@ export class WorldScene extends Phaser.Scene {
 
   castLightBeam(tile) {
     const off = forwardOffset(this.facing, 12)
-    const beam = this.add.image(this.player.x + off.x, this.player.y + off.y, 'rayon-lumiere')
+    const beam = this.spawnCombatFx(
+      this.player.x + off.x, this.player.y + off.y, 'rayon-lumiere', FACING_ANGLE[this.facing] || 0, 1,
+    )
       .setOrigin(0, 0.5)
-      .setRotation(FACING_ANGLE[this.facing] || 0)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(12000)
       .setDisplaySize(200, 22)
-      .setAlpha(1)
     this.tweens.add({
       targets: beam, alpha: 0, displayY: 0.4, duration: 380,
       onComplete: () => beam.destroy(),
@@ -545,28 +570,34 @@ export class WorldScene extends Phaser.Scene {
     const tiles = windGustTiles(origin, dir)
     const spec = windGustFxSpec(this.player, dir)
     const d = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }[dir]
-    const spawn = (delay, scaleMul, tint) => {
-      const img = this.add.image(spec.x, spec.y, spec.key)
-        .setDepth(spec.depth)
-        .setRotation(spec.rotation)
-        .setScale(spec.scale * scaleMul)
-        .setAlpha(1)
-      if (tint) img.setTint(tint)
-      this.tweens.add({
-        targets: img,
-        x: spec.x + d[0] * spec.travelPx,
-        y: spec.y + d[1] * spec.travelPx,
-        scale: spec.endScale * scaleMul,
-        alpha: 0,
-        duration: spec.holdMs + spec.fadeMs,
-        delay,
-        ease: 'Sine.easeOut',
-        onComplete: () => img.destroy(),
+    const spawn = (staggerMs, scaleMul, tint) => {
+      this.time.delayedCall(staggerMs, () => {
+        const img = this.spawnCombatFx(spec.x, spec.y, spec.key, spec.rotation, spec.scale * scaleMul)
+        if (tint) img.setTint(tint)
+        // Travel while staying opaque for holdMs, then fade
+        this.tweens.add({
+          targets: img,
+          x: spec.x + d[0] * spec.travelPx,
+          y: spec.y + d[1] * spec.travelPx,
+          scaleX: spec.endScale * scaleMul,
+          scaleY: spec.endScale * scaleMul,
+          duration: spec.holdMs + spec.fadeMs,
+          ease: 'Sine.easeOut',
+        })
+        this.time.delayedCall(spec.holdMs, () => {
+          if (!img.active) return
+          this.tweens.add({
+            targets: img,
+            alpha: 0,
+            duration: spec.fadeMs,
+            onComplete: () => img.destroy(),
+          })
+        })
       })
     }
     spawn(0, 1, null)
-    spawn(spec.trailDelayMs, 0.85, 0xa8e8ff)
-    spawn(spec.trailDelayMs * 2, 0.7, 0xd0f0ff)
+    spawn(spec.trailDelayMs, 0.9, 0xa8e8ff)
+    spawn(spec.trailDelayMs * 2, 0.75, 0xd0f0ff)
     this.cameras.main.shake(60, 0.004)
     const grid = buildWalkGrid(this.level, this.extraWalk)
     const hit = new Set(tiles.map((t) => `${t.x},${t.y}`))

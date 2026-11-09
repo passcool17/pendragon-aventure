@@ -25,4 +25,12 @@ describe('createKeyTracker latch', () => {
     expect(keys.consume('KeyF')).toBe(true)
     expect(keys.consume('KeyF')).toBe(false)
   })
+
+  it('does not double-fire while key stays down', () => {
+    const keys = createKeyTracker(scene)
+    listeners.keydown({ code: 'Space', preventDefault() {} })
+    expect(keys.consume('Space')).toBe(true)
+    expect(keys.consume('Space')).toBe(false)
+    expect(keys.down.Space).toBe(true)
+  })
 })

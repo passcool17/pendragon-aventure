@@ -5,7 +5,7 @@ export { GAME_CONFIG }
 
 export function createGame(parent = 'game', sceneList = []) {
   const game = new Phaser.Game({
-    type: Phaser.AUTO,
+    type: Phaser.WEBGL,
     parent,
     width: GAME_CONFIG.width,
     height: GAME_CONFIG.height,
