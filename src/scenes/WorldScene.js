@@ -20,6 +20,7 @@ import { shouldFreeze } from '../util/visibility.js'
 import {
   meleeTargetTile, knockbackTile, forwardOffset, windGustTiles, FACING_ANGLE,
 } from '../fx/feel.js'
+import { windGustFxSpec } from '../fx/windFx.js'
 import { planDecor } from '../world/decor.js'
 import { GAME_CONFIG } from '../gameConfig.js'
 
@@ -507,22 +508,31 @@ export class WorldScene extends Phaser.Scene {
   castWind(origin) {
     const dir = this.facing
     const tiles = windGustTiles(origin, dir)
-    const off = forwardOffset(dir, 20)
-    for (let i = 0; i < 5; i++) {
-      const puff = this.add.image(
-        this.player.x + off.x + (Math.random() - 0.5) * 14,
-        this.player.y + off.y + (Math.random() - 0.5) * 14,
-        'rafale-vent',
-      ).setDepth(12000).setRotation(FACING_ANGLE[dir] || 0).setScale(1.4).setAlpha(1)
-      const d = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }[dir]
-      this.tweens.add({
-        targets: puff,
-        x: puff.x + d[0] * (40 + i * 14),
-        y: puff.y + d[1] * (40 + i * 14),
-        alpha: 0, scale: 1.9, duration: 280 + i * 30,
-        onComplete: () => puff.destroy(),
-      })
-    }
+    // Root cause of invisible Vent: tiny puffs faded alpha from t=0 (~280ms),
+    // so captures "just after" F showed nothing. Hold a large gust opaque then fade.
+    const spec = windGustFxSpec(this.player, dir)
+    const gust = this.add.image(spec.x, spec.y, spec.key)
+      .setDepth(spec.depth)
+      .setRotation(spec.rotation)
+      .setScale(spec.scale)
+      .setAlpha(1)
+    const trail = this.add.image(spec.x, spec.y, spec.key)
+      .setDepth(spec.depth)
+      .setRotation(spec.rotation)
+      .setScale(spec.scale * 0.75)
+      .setAlpha(0.85)
+      .setTint(0xa8e8ff)
+    const d = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }[dir]
+    this.tweens.add({
+      targets: [gust, trail],
+      x: gust.x + d[0] * 36,
+      y: gust.y + d[1] * 36,
+      scale: spec.endScale,
+      alpha: 0,
+      duration: spec.fadeMs,
+      delay: spec.holdMs,
+      onComplete: () => { gust.destroy(); trail.destroy() },
+    })
     this.cameras.main.shake(60, 0.004)
     const grid = buildWalkGrid(this.level, this.extraWalk)
     const hit = new Set(tiles.map((t) => `${t.x},${t.y}`))

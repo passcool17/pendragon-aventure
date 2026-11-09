@@ -33,3 +33,9 @@ Crédits : **Créa** (`sprites32` + manifest). Concept cible : Pascal.
 ## Prochaines idées
 
 - Coins intérieurs autotile plus fins ; audio SUNO ; polish boss.
+
+## Hotfix polish (Vent / ruisseau / favicon)
+
+- Vent : rafale large, hold ~180 ms puis fade (total ≥300 ms), depth 12000
+- Autotile eau : orientation berge/coins corrigée + coins intérieurs diagonaux
+- Favicon : `favicon.png` / `favicon.ico` (sprite icon-lumiere)

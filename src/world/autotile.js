@@ -1,4 +1,8 @@
-/** Autotile chemin / eau from neighbor mask (Créa manifest rules). */
+/** Autotile chemin / eau — Créa PNG orientation.
+ * eau-berge-n / chemin-bord-n: material on the NORTH half of the tile.
+ * eau-coin-ext-ne: material in the NE quadrant.
+ * Therefore a water cell on the south rim (no south neighbor) uses eau-berge-n.
+ */
 
 const N = 1, E = 2, S = 4, W = 8
 
@@ -18,63 +22,80 @@ export function isGrassChar(ch) {
   return ch === '.' || ch === ','
 }
 
-function neighborMask(tiles, x, y, pred) {
-  let m = 0
+function at(tiles, x, y) {
   const h = tiles.length
   const w = tiles[0]?.length || 0
-  const at = (tx, ty) => (ty >= 0 && ty < h && tx >= 0 && tx < w ? tiles[ty][tx] : null)
-  if (pred(at(x, y - 1))) m |= N
-  if (pred(at(x + 1, y))) m |= E
-  if (pred(at(x, y + 1))) m |= S
-  if (pred(at(x - 1, y))) m |= W
+  if (y < 0 || y >= h || x < 0 || x >= w) return null
+  return tiles[y][x]
+}
+
+function neighborMask(tiles, x, y, pred) {
+  let m = 0
+  if (pred(at(tiles, x, y - 1))) m |= N
+  if (pred(at(tiles, x + 1, y))) m |= E
+  if (pred(at(tiles, x, y + 1))) m |= S
+  if (pred(at(tiles, x - 1, y))) m |= W
   return m
 }
 
-/** Pick chemin texture key for a path cell. */
+function diag(tiles, x, y, pred) {
+  return {
+    ne: !!pred(at(tiles, x + 1, y - 1)),
+    no: !!pred(at(tiles, x - 1, y - 1)),
+    se: !!pred(at(tiles, x + 1, y + 1)),
+    so: !!pred(at(tiles, x - 1, y + 1)),
+  }
+}
+
+function pickKey(kind, tiles, x, y, pred) {
+  const fill = kind === 'eau' ? 'eau-ruisseau' : 'chemin-terre'
+  const edge = (missing) => {
+    // grass toward `missing` ⇒ material on the opposite side of the PNG
+    const map = kind === 'eau'
+      ? { N: 'eau-berge-s', S: 'eau-berge-n', E: 'eau-berge-o', W: 'eau-berge-e' }
+      : { N: 'chemin-bord-s', S: 'chemin-bord-n', E: 'chemin-bord-o', W: 'chemin-bord-e' }
+    return map[missing]
+  }
+  const ext = (quad) => (kind === 'eau' ? `eau-coin-ext-${quad}` : `chemin-coin-ext-${quad}`)
+  const inn = (quad) => (kind === 'eau' ? `eau-coin-int-${quad}` : `chemin-coin-int-${quad}`)
+
+  const m = neighborMask(tiles, x, y, pred)
+  const ALL = N | E | S | W
+
+  if (m === ALL) {
+    const d = diag(tiles, x, y, pred)
+    if (!d.ne) return inn('ne')
+    if (!d.no) return inn('no')
+    if (!d.se) return inn('se')
+    if (!d.so) return inn('so')
+    return fill
+  }
+
+  if (m === (E | S | W)) return edge('N')
+  if (m === (N | E | W)) return edge('S')
+  if (m === (N | S | W)) return edge('E')
+  if (m === (N | E | S)) return edge('W')
+
+  // Outer corner: material fills the quadrant toward both neighbors
+  if (m === (E | S)) return ext('se')
+  if (m === (S | W)) return ext('so')
+  if (m === (N | E)) return ext('ne')
+  if (m === (N | W)) return ext('no')
+
+  if (m === (N | S) || m === (E | W)) return fill
+  if (m === N) return edge('S')
+  if (m === S) return edge('N')
+  if (m === E) return edge('W')
+  if (m === W) return edge('E')
+  return fill
+}
+
 export function cheminKey(tiles, x, y) {
-  const path = (ch) => ch && (isPathChar(ch) || isBridgeChar(ch))
-  const m = neighborMask(tiles, x, y, path)
-  // 4-connected fill
-  if (m === (N | E | S | W)) return 'chemin-terre'
-  // single edges
-  if (m === (E | S | W)) return 'chemin-bord-n'
-  if (m === (N | E | W)) return 'chemin-bord-s'
-  if (m === (N | S | W)) return 'chemin-bord-e'
-  if (m === (N | E | S)) return 'chemin-bord-o'
-  // outer corners (two neighbors)
-  if (m === (E | S)) return 'chemin-coin-ext-no'
-  if (m === (S | W)) return 'chemin-coin-ext-ne'
-  if (m === (N | E)) return 'chemin-coin-ext-so'
-  if (m === (N | W)) return 'chemin-coin-ext-se'
-  // T junctions / ends → nearest edge or fill
-  if (m === (N | S)) return 'chemin-terre'
-  if (m === (E | W)) return 'chemin-terre'
-  if (m === N) return 'chemin-bord-s'
-  if (m === S) return 'chemin-bord-n'
-  if (m === E) return 'chemin-bord-o'
-  if (m === W) return 'chemin-bord-e'
-  if (m === 0) return 'chemin-terre'
-  return 'chemin-terre'
+  return pickKey('chemin', tiles, x, y, (ch) => ch && (isPathChar(ch) || isBridgeChar(ch)))
 }
 
 export function eauKey(tiles, x, y) {
-  const water = (ch) => ch && (isWaterChar(ch) || isBridgeChar(ch))
-  const m = neighborMask(tiles, x, y, water)
-  if (m === (N | E | S | W)) return 'eau-ruisseau'
-  if (m === (E | S | W)) return 'eau-berge-n'
-  if (m === (N | E | W)) return 'eau-berge-s'
-  if (m === (N | S | W)) return 'eau-berge-e'
-  if (m === (N | E | S)) return 'eau-berge-o'
-  if (m === (E | S)) return 'eau-coin-ext-no'
-  if (m === (S | W)) return 'eau-coin-ext-ne'
-  if (m === (N | E)) return 'eau-coin-ext-so'
-  if (m === (N | W)) return 'eau-coin-ext-se'
-  if (m === (N | S) || m === (E | W)) return 'eau-ruisseau'
-  if (m === N) return 'eau-berge-s'
-  if (m === S) return 'eau-berge-n'
-  if (m === E) return 'eau-berge-o'
-  if (m === W) return 'eau-berge-e'
-  return 'eau-ruisseau'
+  return pickKey('eau', tiles, x, y, (ch) => ch && (isWaterChar(ch) || isBridgeChar(ch)))
 }
 
 export function herbeKey(x, y) {
@@ -84,9 +105,8 @@ export function herbeKey(x, y) {
 
 export function textureForCell(tiles, x, y) {
   const ch = tiles[y][x]
-  if (isBridgeChar(ch)) return 'pont-pierre' // overlay handled separately; base under
+  if (isBridgeChar(ch)) return 'pont-pierre'
   if (isWaterChar(ch)) return eauKey(tiles, x, y)
   if (isPathChar(ch)) return cheminKey(tiles, x, y)
-  if (ch === '#') return herbeKey(x, y) // blocked grass under canopy
   return herbeKey(x, y)
 }
