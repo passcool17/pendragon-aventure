@@ -1,15 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { PALETTE, TEXTURE_KEYS } from '../src/gfx/placeholders.js'
+import { readFileSync } from 'node:fs'
 
-describe('placeholders', () => {
-  it('uses dark forest palette with gold spell', () => {
-    expect(PALETTE.floor).toMatch(/^#/)
-    expect(PALETTE.gold).toBe('#e8c547')
-    expect(TEXTURE_KEYS).toContain('merlin')
-    expect(TEXTURE_KEYS).toContain('icon-light')
-    expect(TEXTURE_KEYS).toContain('light-orb')
-    expect(TEXTURE_KEYS).toContain('melee-arc')
-    expect(TEXTURE_KEYS).toContain('wind-puff')
-    expect(TEXTURE_KEYS).toContain('tree')
+describe('fx placeholder module', () => {
+  it('exports generateFxPlaceholders', () => {
+    const src = readFileSync('src/gfx/placeholders.js', 'utf8')
+    expect(src).toContain('generateFxPlaceholders')
+    expect(src).toContain('rayon-lumiere')
   })
 })

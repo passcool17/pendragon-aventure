@@ -1,7 +1,7 @@
-/** Shared config — no Phaser import (safe for Node tests). */
 export const GAME_CONFIG = {
-  width: 384,
-  height: 288,
+  width: 640,
+  height: 360,
+  tileSize: 32,
   pixelArt: true,
   roundPixels: true,
   scaleMode: 'FIT',

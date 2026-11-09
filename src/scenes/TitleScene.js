@@ -9,7 +9,7 @@ export class TitleScene extends Phaser.Scene {
 
   create() {
     const cx = this.scale.width / 2
-    this.add.text(cx, 60, 'Merlin : Les Brumes\nde Bretagne', {
+    this.add.text(cx, 80, 'Merlin : Les Brumes\nde Bretagne', {
       fontFamily: 'monospace', fontSize: '16px', color: '#e8c547', align: 'center',
     }).setOrigin(0.5)
 
@@ -23,11 +23,11 @@ export class TitleScene extends Phaser.Scene {
       return t
     }
 
-    mk(130, 'Nouvelle partie', () => this.startFresh())
-    if (save.ok) mk(155, 'Continuer', () => this.continueSave(save.state))
-    mk(180, 'Effacer la sauvegarde', () => { clearSave(); this.scene.restart() })
+    mk(160, 'Nouvelle partie', () => this.startFresh())
+    if (save.ok) mk(195, 'Continuer', () => this.continueSave(save.state))
+    mk(230, 'Effacer la sauvegarde', () => { clearSave(); this.scene.restart() })
 
-    this.add.text(cx, 250, 'Entrée/Espace · WASD · E · 1-3 · F · Échap', {
+    this.add.text(cx, 320, 'Entrée/Espace · WASD · E · 1-3 · F · Échap', {
       fontFamily: 'monospace', fontSize: '8px', color: '#7a9bb0',
     }).setOrigin(0.5)
 

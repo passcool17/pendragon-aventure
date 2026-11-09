@@ -6,10 +6,10 @@ export class PauseScene extends Phaser.Scene {
   constructor() { super('PauseScene') }
 
   create() {
-    this.add.rectangle(192, 144, 384, 288, 0x000000, 0.65)
-    this.add.text(192, 80, 'Pause', { fontFamily: 'monospace', fontSize: '16px', color: '#e8c547' }).setOrigin(0.5)
+    this.add.rectangle(320, 180, 640, 360, 0x000000, 0.65)
+    this.add.text(320, 100, 'Pause', { fontFamily: 'monospace', fontSize: '16px', color: '#e8c547' }).setOrigin(0.5)
     const mk = (y, label, fn) => {
-      const t = this.add.text(192, y, label, { fontFamily: 'monospace', fontSize: '12px', color: '#f0e6c8' })
+      const t = this.add.text(320, y, label, { fontFamily: 'monospace', fontSize: '12px', color: '#f0e6c8' })
         .setOrigin(0.5).setInteractive({ useHandCursor: true })
       t.on('pointerdown', fn)
     }

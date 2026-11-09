@@ -2,7 +2,8 @@
 
 ## Concept
 
-Zelda-like top-down : hub → forêt (Lumière) → ruines (Vent) → sanctuaire (Nature) → Gardien. Personnages fictifs ; ambiance Bretagne post-romaine.
+Zelda-like 32px : hub → forêt (Lumière / rayon doré) → ruines (Vent) → sanctuaire (Nature) → Gardien.  
+Cible finale : concept Pascal (chemin en croix, ruisseau + pont, ruines/colonnes, brume douce).
 
 ## Contrôles
 
@@ -10,31 +11,21 @@ Zelda-like top-down : hub → forêt (Lumière) → ruines (Vent) → sanctuaire
 |--------|--------|
 | Flèches / WASD | Déplacement |
 | Espace | Mêlée |
-| E | Interagir / dialogue |
+| E | Interagir |
 | 1 / 2 / 3 | Lumière / Vent / Nature |
 | F | Lancer le sort |
+| Entrée / Espace | Nouvelle partie (titre) |
 | Échap | Pause |
-| Tactile | Pad + A / F / cycle |
 
 ## État
 
-**Publié — sprites Créa + Scale.FIT** (corrigé décalage clic/centrage), sol moins rayé, FX mêlée/orbe plus visibles.  
+**Publié — pack Créa sprites32** + autotile chemin/eau, Merlin dos/face/profil, y-sort, forêt type concept.  
 URL : https://passcool17.github.io/pendragon-aventure/  
-Repo : https://github.com/passcool17/pendragon-aventure  
+Debug forêt : https://passcool17.github.io/pendragon-aventure/?level=forest  
 
-Crédits visuels : **Créa** (pack `merlin-foret-bretonne/sprites`). FX combat encore procéduraux.
-
-## Instructions de test rapide
-
-1. Pages → Nouvelle partie → Branoc → forêt sud.
-2. Lumière `1`+`F` sur 3 braseros → donjon nord → boss.
-3. Ruines (est) : Vent `2`+`F` sur blocs.
-4. Sanctuaire (ouest) : Nature `3`+`F` près des graines.
-5. Nord hub : totems + mêlée.
-
-Debug : `?level=forest` etc.
+Crédits : **Créa** (`sprites32` + manifest). Concept cible : Pascal.
 
 ## Prochaines idées
 
-- Remplacer FX procéduraux si Créa livre arc/orbe/vent.
-- Musique SUNO ; polish boss.
+- Autotile coins intérieurs plus fins ; plus de variants de décor.
+- Audio SUNO ; polish boss.

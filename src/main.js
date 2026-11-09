@@ -12,7 +12,7 @@ export function createGame(parent = 'game', sceneList = []) {
     pixelArt: GAME_CONFIG.pixelArt,
     roundPixels: GAME_CONFIG.roundPixels,
     antialias: false,
-    backgroundColor: '#0b1210',
+    backgroundColor: '#1a2a1a',
     physics: { default: 'arcade', arcade: { debug: false } },
     scale: {
       mode: Phaser.Scale.FIT,

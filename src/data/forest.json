@@ -1,45 +1,58 @@
 {
   "id": "forest",
-  "width": 24,
-  "height": 18,
+  "width": 20,
+  "height": 14,
   "spawn": {
-    "x": 5,
+    "x": 10,
     "y": 10
   },
   "tiles": [
-    "########################",
-    "#......................#",
-    "#..........N...........#",
-    "#......................#",
-    "#.........####.........#",
-    "#......................#",
-    "#.......B...B...B......#",
-    "#......................#",
-    "#......................#",
-    "#......................#",
-    "#.X....................#",
-    "#......................#",
-    "#......................#",
-    "#......................#",
-    "#......................#",
-    "#......................#",
-    "#......................#",
-    "########################"
+    "####################",
+    "#..................#",
+    "#.~~...............#",
+    "#.~~~....NN........#",
+    "#.~~.....==........#",
+    "#~~~.....==........#",
+    "#.~~~..B.==.B......#",
+    "#.PP==============.#",
+    "#.PP==============.#",
+    "#~~~~....==B.......#",
+    "#.~~.....==........#",
+    "#.~~.....==........#",
+    "#........XX........#",
+    "####################"
   ],
   "exits": [
     {
       "to": "hub",
       "tile": [
-        2,
-        10
+        9,
+        12
+      ],
+      "spawnId": "from-forest"
+    },
+    {
+      "to": "hub",
+      "tile": [
+        10,
+        12
       ],
       "spawnId": "from-forest"
     },
     {
       "to": "forest-dungeon",
       "tile": [
-        11,
-        2
+        9,
+        3
+      ],
+      "spawnId": "dungeon",
+      "requires": "fog-gate"
+    },
+    {
+      "to": "forest-dungeon",
+      "tile": [
+        10,
+        3
       ],
       "spawnId": "dungeon",
       "requires": "fog-gate"
@@ -49,17 +62,17 @@
     {
       "type": "shadow-blob",
       "x": 10,
-      "y": 8
+      "y": 5
     },
     {
       "type": "shadow-blob",
       "x": 14,
-      "y": 9
+      "y": 8
     },
     {
       "type": "mist-wolf",
-      "x": 18,
-      "y": 11
+      "x": 6,
+      "y": 9
     }
   ],
   "puzzles": [
@@ -69,7 +82,7 @@
       "unlock": "fog-gate",
       "tiles": [
         [
-          8,
+          7,
           6
         ],
         [
@@ -77,8 +90,8 @@
           6
         ],
         [
-          16,
-          6
+          11,
+          9
         ]
       ]
     }
@@ -86,7 +99,7 @@
   "chests": [
     {
       "id": "forest-heart",
-      "x": 20,
+      "x": 16,
       "y": 4,
       "item": "heart-piece"
     }
@@ -94,10 +107,124 @@
   "checkpoints": [
     {
       "id": "forest-entry",
-      "x": 5,
+      "x": 10,
       "y": 10
     }
   ],
   "npcs": [],
-  "spellUnlock": "light"
+  "spellUnlock": "light",
+  "props": [
+    {
+      "key": "facade-sanctuaire",
+      "x": 9.5,
+      "y": 1.2,
+      "originY": 1,
+      "solid": false
+    },
+    {
+      "key": "colonne-romaine",
+      "x": 7,
+      "y": 3,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "colonne-romaine",
+      "x": 8,
+      "y": 3,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "colonne-romaine",
+      "x": 11,
+      "y": 3,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "colonne-romaine",
+      "x": 12,
+      "y": 3,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "colonne-romaine-cassee",
+      "x": 13,
+      "y": 4,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "muret-ruine",
+      "x": 6,
+      "y": 4,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "muret-ruine",
+      "x": 14,
+      "y": 4,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "pont-pierre",
+      "x": 2.5,
+      "y": 7.5,
+      "originY": 0.55,
+      "solid": false
+    },
+    {
+      "key": "arbre-grand-1",
+      "x": 5,
+      "y": 4,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "arbre-grand-2",
+      "x": 15,
+      "y": 5,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "arbre-grand-1",
+      "x": 4,
+      "y": 11,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "arbre-grand-2",
+      "x": 16,
+      "y": 11,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "arbre-grand-1",
+      "x": 17,
+      "y": 3,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "rocher-grand",
+      "x": 6,
+      "y": 10,
+      "originY": 1,
+      "solid": true
+    },
+    {
+      "key": "rocher-petit",
+      "x": 13,
+      "y": 10,
+      "originY": 1,
+      "solid": true
+    }
+  ]
 }

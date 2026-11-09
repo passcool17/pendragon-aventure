@@ -1,49 +1,24 @@
 # Merlin : Les Brumes de Bretagne
 
-Aventure Zelda-like top-down (Phaser 3), originale, ambiance Bretagne post-romaine brumeuse.
+Aventure Zelda-like top-down (Phaser 3), tuiles **32px**, ambiance Bretagne post-romaine.
 
-**Jouer :** https://passcool17.github.io/pendragon-aventure/
+**Jouer :** https://passcool17.github.io/pendragon-aventure/  
+**Forêt (debug) :** https://passcool17.github.io/pendragon-aventure/?level=forest  
 
 **Dépôt :** https://github.com/passcool17/pendragon-aventure
 
 ## Contrôles
 
-| Entrée | Action |
-|--------|--------|
-| Flèches / WASD | Déplacement |
-| Espace | Mêlée (bâton) |
-| E | Interagir / avancer le dialogue |
-| 1 / 2 / 3 | Sort Lumière / Vent / Nature |
-| F | Lancer le sort actif |
-| Échap | Pause |
-| Tactile | Pad + boutons A / F / cycle |
-
-## Debug (saut de niveau)
-
-- `?level=forest` / `ruins` / `sanctuary` / `boss-final`
-- `?spells=all&fragments=all` · `?god=1`
-
-Ex. : https://passcool17.github.io/pendragon-aventure/?level=forest
+WASD/flèches · Espace mêlée · E dialogue · 1/2/3 sorts · F lancer · Entrée/Espace (titre) · Échap
 
 ## Visuels
 
-Sprites pixel art **Créa** (`public/assets/sprites/`, clés = noms de fichiers).  
-Effets FX (arc, orbe, vent, brume) encore générés en code tant que non livrés.  
-Aperçu source : `/workspace/crea/merlin-foret-bretonne/sprites/`.
+Pack pixel art **32px Créa** (`public/assets/sprites32/`, `manifest.json`).  
+Cible visuelle Pascal : `assets/concept/cible-finale-pascal.png`.  
+Résolution logique 640×360, `Scale.FIT` + `CENTER_BOTH`, `pixelArt`.
 
-## Dev local
+## Dev
 
 ```bash
-npm install
-npm test
-npm run dev
-npm run build
+npm install && npm test && npm run dev && npm run build
 ```
-
-Base Vite : `/pendragon-aventure/` (GitHub Pages projet). Scale entier pour pixels nets.
-
-## Docs
-
-- Spec : `docs/superpowers/specs/2026-11-09-merlin-zelda-like-design.md`
-- Plan : `docs/superpowers/plans/2026-11-09-merlin-les-brumes-de-bretagne.md`
-- Suivi : `GAME.md`

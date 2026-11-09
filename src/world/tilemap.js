@@ -1,18 +1,23 @@
-const BASE_WALK = new Set(['.', 'D', 'B', 'G', 'X', 'C', 'N', 'T'])
+import { isPathChar, isWaterChar, isBridgeChar } from './autotile.js'
+
+const WALK = new Set(['.', ',', '=', 'P', 'B', 'D', 'G', 'T', 'C', 'X', 'N'])
 
 export function isWalkable(level, x, y, extraWalkable = new Set()) {
   if (y < 0 || y >= level.height || x < 0 || x >= level.width) return false
-  const key = `${x},${y}`
-  if (extraWalkable.has(key)) return true
+  if (extraWalkable.has(`${x},${y}`)) return true
   const ch = level.tiles[y][x]
-  return BASE_WALK.has(ch)
+  return WALK.has(ch)
 }
 
-export function tileToWorld(tx, ty, tile = 16) {
+export function isSolidTile(ch) {
+  return ch === '#' || isWaterChar(ch)
+}
+
+export function tileToWorld(tx, ty, tile = 32) {
   return { x: tx * tile + tile / 2, y: ty * tile + tile / 2 }
 }
 
-export function worldToTile(wx, wy, tile = 16) {
+export function worldToTile(wx, wy, tile = 32) {
   return { x: Math.floor(wx / tile), y: Math.floor(wy / tile) }
 }
 
@@ -27,3 +32,5 @@ export function buildWalkGrid(level, extraWalkable = new Set()) {
   }
   return grid
 }
+
+export { isPathChar, isWaterChar, isBridgeChar }

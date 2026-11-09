@@ -5,31 +5,41 @@ import {
   setActiveSpell, bumpHeartsMax, setPosition,
 } from '../state/gameState.js'
 import { vectorFromKeys, cycleSpell, createKeyTracker } from '../input/controls.js'
-import { facingFromVector, canMelee, MELEE_DAMAGE } from '../combat/combat.js'
-import { castSpell } from '../world/spells.js'
+import { facingFromVector, canMelee, MELEE_DAMAGE, SPELL_COST } from '../combat/combat.js'
+import { spendMana } from '../state/gameState.js'
 import { createEnemy, damageEnemy } from '../world/enemies.js'
-import { isWalkable, tileToWorld, worldToTile, buildWalkGrid } from '../world/tilemap.js'
+import { isWalkable, tileToWorld, worldToTile, buildWalkGrid, isSolidTile } from '../world/tilemap.js'
+import { textureForCell } from '../world/autotile.js'
 import { getDialogue, canEnter } from '../world/dialogue.js'
 import { lightBrazier, extinguishBrazier, allBraziersLit } from '../puzzles/braziers.js'
 import { pushBlock } from '../puzzles/windPush.js'
 import { growBridge } from '../puzzles/natureBridge.js'
 import { createBossPhase, strikeTotem, bossHit, bossDefeated } from '../puzzles/bossTotems.js'
 import { shouldFreeze } from '../util/visibility.js'
-import { planDecor, floorStyle } from '../world/decor.js'
 import {
-  meleeTargetTile, knockbackTile, lightOrbVelocity, forwardOffset,
-  windGustTiles, shouldFlipMerlin, FACING_ANGLE,
+  meleeTargetTile, knockbackTile, forwardOffset, windGustTiles, FACING_ANGLE,
 } from '../fx/feel.js'
+import { planDecor } from '../world/decor.js'
+import { GAME_CONFIG } from '../gameConfig.js'
 
-const TILE = 16
-const SPEED = 70
+const TILE = GAME_CONFIG.tileSize
+const SPEED = 110
+
+const ENEMY_TEX = {
+  'shadow-blob': 'ombre',
+  'mist-wolf': 'ombre',
+  'stone-specter': 'ombre',
+  crow: 'ombre',
+  root: 'ombre',
+  fairy: 'ombre',
+  'region-boss': 'gardien',
+  'final-boss': 'gardien',
+}
 
 export class WorldScene extends Phaser.Scene {
   constructor() { super('WorldScene') }
 
-  init(data) {
-    this.levelId = data?.levelId || 'hub'
-  }
+  init(data) { this.levelId = data?.levelId || 'hub' }
 
   create() {
     this.level = loadLevel(this.levelId)
@@ -40,20 +50,27 @@ export class WorldScene extends Phaser.Scene {
     this.brazierSprites = []
     this.enemies = []
     this.enemySprites = []
-    this.projectiles = []
     this.npcs = []
+    this.solidProps = []
+    this.depthSprites = []
     this.facing = 'S'
     this.lastMelee = 0
     this.invulnUntil = 0
     this.dialogue = null
     this.bossPhase = null
     this.totemSprites = []
-    this.fogGateSprites = []
     this.frozen = false
+    this.grown = 0
+    this.seeds = []
+    this.plates = null
+    this.beam = null
 
     this.drawTiles()
     this.setupPuzzles()
+    this.spawnProps()
+    this.spawnDecor()
     this.spawnEntities()
+    this.addAtmosphere()
 
     let state = getState(this)
     if (this.level.spellUnlock && !state.spellsUnlocked.includes(this.level.spellUnlock)) {
@@ -61,128 +78,92 @@ export class WorldScene extends Phaser.Scene {
       const names = { light: 'Lumière', wind: 'Vent', nature: 'Nature' }
       showMessage(this, `Sort : ${names[this.level.spellUnlock]}`)
     }
-    // reset heal token each hub visit
     if (this.levelId === 'hub') state = setFlag(state, 'hubHealReady', true)
-    state = setPosition(state, { scene: this.levelId, regionId: this.levelId, x: this.level.spawn.x, y: this.level.spawn.y })
+    state = setPosition(state, {
+      scene: this.levelId, regionId: this.levelId,
+      x: this.level.spawn.x, y: this.level.spawn.y,
+    })
     setState(this, state)
 
     const spawn = tileToWorld(this.level.spawn.x, this.level.spawn.y, TILE)
-    this.player = this.physics.add.sprite(spawn.x, spawn.y, 'merlin')
+    this.player = this.physics.add.sprite(spawn.x, spawn.y, 'merlin-face')
     this.player.setCollideWorldBounds(true)
-    this.player.body.setSize(10, 10).setOffset(3, 12)
+    this.player.body.setSize(14, 12).setOffset(9, 32)
+    this.depthSprites.push(this.player)
 
     this.cameras.main.setBounds(0, 0, this.level.width * TILE, this.level.height * TILE)
-    this.cameras.main.startFollow(this.player, true, 0.15, 0.15)
+    this.cameras.main.startFollow(this.player, true, 0.12, 0.12)
     this.cameras.main.setRoundPixels(true)
     this.physics.world.setBounds(0, 0, this.level.width * TILE, this.level.height * TILE)
 
     this.keys = createKeyTracker(this)
-    this.visHandler = () => {
-      this.frozen = shouldFreeze(document.visibilityState)
-    }
+    this.visHandler = () => { this.frozen = shouldFreeze(document.visibilityState) }
     document.addEventListener('visibilitychange', this.visHandler)
-    this.events.once('shutdown', () => {
-      document.removeEventListener('visibilitychange', this.visHandler)
-    })
+    this.events.once('shutdown', () => document.removeEventListener('visibilitychange', this.visHandler))
 
-    if (this.level.finalBoss) {
-      this.bossPhase = createBossPhase()
-    }
-    this.addAtmosphere()
-  }
-
-  addAtmosphere() {
-    const w = this.scale.width
-    const h = this.scale.height
-    // Soft edge only — avoid heavy letterbox that shrinks the playfield
-    const g = this.add.graphics().setScrollFactor(0).setDepth(800)
-    g.fillStyle(0x000000, 0.18)
-    g.fillRect(0, 0, w, 10)
-    g.fillRect(0, h - 12, w, 12)
-    this.mist = []
-    for (let i = 0; i < 5; i++) {
-      const m = this.add.image(
-        (i * 73) % (this.level.width * TILE),
-        20 + (i * 97) % Math.max(16, this.level.height * TILE - 40),
-        'mist-puff',
-      ).setDepth(50).setAlpha(0.18).setBlendMode(Phaser.BlendModes.ADD)
-      this.mist.push({ spr: m, vx: 6 + (i % 3) * 3, baseY: m.y, t: i })
-    }
-  }
-
-  updateMist(dt) {
-    if (!this.mist) return
-    const maxX = this.level.width * TILE + 40
-    for (const m of this.mist) {
-      m.t += dt
-      m.spr.x += m.vx * dt
-      m.spr.y = m.baseY + Math.sin(m.t) * 4
-      if (m.spr.x > maxX) m.spr.x = -40
-    }
+    if (this.level.finalBoss) this.bossPhase = createBossPhase()
   }
 
   drawTiles() {
     this.walls = this.physics.add.staticGroup()
-    this.wallAt = new Map()
-    this.tileImg = new Map()
     for (let y = 0; y < this.level.height; y++) {
       for (let x = 0; x < this.level.width; x++) {
         const ch = this.level.tiles[y][x]
-        let key = 'tile-floor'
-        if (ch === '#') key = 'tile-wall'
-        else if (ch === '~') key = 'tile-water'
+        const key = textureForCell(this.level.tiles, x, y)
         const { x: wx, y: wy } = tileToWorld(x, y, TILE)
-        const img = this.add.image(wx, wy, key)
-        if (key === 'tile-floor') {
-          const st = floorStyle(x, y)
-          img.setFlipX(!!st.flipX)
-          img.setFlipY(!!st.flipY)
-          img.setTint(st.tint)
+        // under bridge draw water then skip pont texture as tile (prop handles bridge art)
+        if (ch === 'P') {
+          this.add.image(wx, wy, 'eau-ruisseau').setDepth(0)
+        } else {
+          const tex = this.textures.exists(key) ? key : 'herbe-1'
+          this.add.image(wx, wy, tex).setDepth(0)
         }
-        this.tileImg.set(`${x},${y}`, img)
-        if (ch === '#' || ch === '~') {
-          const wall = this.walls.create(wx, wy, key)
+        if (isSolidTile(ch) && ch !== 'P') {
+          const wall = this.walls.create(wx, wy, 'herbe-1')
           wall.setVisible(false)
           wall.refreshBody()
-          this.wallAt.set(`${x},${y}`, wall)
-        }
-        if (ch === 'N' || ch === 'X') {
-          this.add.rectangle(wx, wy, 14, 14, 0xe8c547, 0.2)
         }
       }
     }
-    this.placeDecor()
   }
 
-  placeDecor() {
-    const items = planDecor(this.level)
-    for (const d of items) {
+  spawnProps() {
+    for (const p of this.level.props || []) {
+      const wx = p.x * TILE + TILE / 2
+      const wy = p.y * TILE + TILE / 2
+      if (!this.textures.exists(p.key)) continue
+      const spr = this.add.image(wx, wy, p.key)
+      spr.setOrigin(0.5, p.originY ?? 1)
+      spr.setDepth(wy)
+      this.depthSprites.push(spr)
+      if (p.solid) {
+        this.solidProps.push({
+          x: Math.floor(p.x), y: Math.floor(p.y),
+          // foot collision ~1 tile
+          spr,
+        })
+      }
+    }
+  }
+
+  spawnDecor() {
+    for (const d of planDecor(this.level)) {
+      // skip if prop already at tile
+      if ((this.level.props || []).some((p) => Math.floor(p.x) === d.x && Math.floor(p.y) === d.y)) continue
+      if (!this.textures.exists(d.key)) continue
       const { x: wx, y: wy } = tileToWorld(d.x, d.y, TILE)
-      const depth = d.key === 'tree' || d.key === 'ruin-column' ? 60 : 35
-      const spr = this.add.image(wx, wy, d.key).setDepth(depth)
-      if (d.originY != null) spr.setOrigin(0.5, d.originY)
+      const spr = this.add.image(wx, wy, d.key)
+      spr.setOrigin(0.5, d.originY ?? 1)
       if (d.scale) spr.setScale(d.scale)
-      if (d.alpha != null) spr.setAlpha(d.alpha)
-      if (d.tint != null) spr.setTint(d.tint)
+      spr.setDepth(wy)
+      this.depthSprites.push(spr)
+      if (d.solid) this.solidProps.push({ x: d.x, y: d.y, spr })
     }
-  }
-
-  openTile(x, y) {
-    const row = this.level.tiles[y]
-    if (!row) return
-    const a = row.split('')
-    a[x] = '.'
-    this.level.tiles[y] = a.join('')
-    const wall = this.wallAt.get(`${x},${y}`)
-    if (wall) {
-      wall.destroy()
-      this.wallAt.delete(`${x},${y}`)
-    }
-    const img = this.tileImg.get(`${x},${y}`)
-    if (img) img.setTexture('tile-floor')
-    else {
-      const pos = tileToWorld(x, y, TILE)
-      this.add.image(pos.x, pos.y, 'tile-floor')
+    // canopy along top/sides
+    for (let x = 0; x < this.level.width; x += 3) {
+      if (this.textures.exists('canopee-bord')) {
+        this.add.image(x * TILE + 64, 24, 'canopee-bord').setDepth(900).setAlpha(0.85).setScrollFactor(1)
+      }
     }
   }
 
@@ -192,25 +173,20 @@ export class WorldScene extends Phaser.Scene {
         this.brazierLit = p.tiles.map(() => false)
         p.tiles.forEach(([tx, ty], i) => {
           const { x, y } = tileToWorld(tx, ty, TILE)
-          const s = this.add.image(x, y, 'brazier-off')
+          const s = this.add.image(x, y, 'brasero-off').setDepth(y)
           s.setData('index', i)
           this.brazierSprites.push(s)
+          this.depthSprites.push(s)
         })
-        // fog gate visuals on blocked tiles near N
-        for (let x = 10; x < 14; x++) {
-          if (this.level.tiles[4]?.[x] === '#') {
-            const { x: wx, y: wy } = tileToWorld(x, 4, TILE)
-            const g = this.add.rectangle(wx, wy, 16, 16, 0x7a9bb0, 0.55)
-            this.fogGateSprites.push({ gx: x, gy: 4, sprite: g })
-          }
-        }
       }
       if (p.type === 'push-blocks') {
         this.plates = p.plates
         p.blocks.forEach((b) => {
           this.blocks.push({ ...b })
           const { x, y } = tileToWorld(b.x, b.y, TILE)
-          this.blockSprites.push(this.add.image(x, y, 'block'))
+          const s = this.add.image(x, y, 'bloc-pierre').setDepth(y)
+          this.blockSprites.push(s)
+          this.depthSprites.push(s)
         })
       }
       if (p.type === 'vine-bridges') {
@@ -220,9 +196,10 @@ export class WorldScene extends Phaser.Scene {
       if (p.type === 'totems') {
         p.tiles.forEach(([tx, ty], i) => {
           const { x, y } = tileToWorld(tx, ty, TILE)
-          const s = this.add.image(x, y, 'totem-on')
+          const s = this.add.image(x, y, 'totem-on').setOrigin(0.5, 1).setDepth(y)
           s.setData('spell', p.spells[i])
           this.totemSprites.push(s)
+          this.depthSprites.push(s)
         })
       }
     }
@@ -233,16 +210,41 @@ export class WorldScene extends Phaser.Scene {
       const enemy = createEnemy(e.type, e.x, e.y, e)
       this.enemies.push(enemy)
       const { x, y } = tileToWorld(e.x, e.y, TILE)
-      const tex = e.type.includes('boss') || e.type === 'final-boss' ? 'boss' : 'enemy-shadow'
+      const tex = ENEMY_TEX[e.type] || 'ombre'
       const spr = this.physics.add.sprite(x, y, tex)
-      spr.body.setSize(12, 12)
+      spr.body.setSize(16, 12).setOffset(8, tex === 'gardien' ? 40 : 16)
       this.enemySprites.push(spr)
+      this.depthSprites.push(spr)
     }
     for (const n of this.level.npcs || []) {
       const { x, y } = tileToWorld(n.x, n.y, TILE)
-      const spr = this.add.image(x, y, 'npc')
+      const spr = this.add.image(x, y, 'villageois').setOrigin(0.5, 1).setDepth(y)
       spr.setData('npcId', n.id)
       this.npcs.push({ ...n, sprite: spr })
+      this.depthSprites.push(spr)
+    }
+  }
+
+  addAtmosphere() {
+    // Soft warm vignette ≤10% — no blue wash
+    const g = this.add.graphics().setScrollFactor(0).setDepth(850)
+    const w = this.scale.width
+    const h = this.scale.height
+    g.fillStyle(0x000000, 0.08)
+    g.fillRect(0, 0, w, 16)
+    g.fillRect(0, h - 18, w, 18)
+    g.fillRect(0, 0, 14, h)
+    g.fillRect(w - 14, 0, 14, h)
+
+    this.mist = []
+    for (let i = 0; i < 4; i++) {
+      if (!this.textures.exists('nappe-brume')) break
+      const m = this.add.image(
+        (i * 140) % (this.level.width * TILE),
+        40 + i * 50,
+        'nappe-brume',
+      ).setDepth(70).setAlpha(0.22)
+      this.mist.push({ spr: m, vx: 4 + i, baseY: m.y, t: i })
     }
   }
 
@@ -257,12 +259,37 @@ export class WorldScene extends Phaser.Scene {
     state = regenMana(state, dt)
     setState(this, state, { save: false })
 
-    this.movePlayer(dt)
+    this.movePlayer()
     this.updateMist(dt)
     this.handleActions()
     this.updateEnemies(dt)
-    this.updateProjectiles(dt)
+    this.sortDepth()
     this.checkExits()
+  }
+
+  sortDepth() {
+    for (const s of this.depthSprites) {
+      if (s?.active) s.setDepth(s.y)
+    }
+  }
+
+  updateMist(dt) {
+    if (!this.mist) return
+    const maxX = this.level.width * TILE + 80
+    for (const m of this.mist) {
+      m.t += dt
+      m.spr.x += m.vx * dt
+      m.spr.y = m.baseY + Math.sin(m.t * 0.6) * 6
+      if (m.spr.x > maxX) m.spr.x = -80
+    }
+  }
+
+  propBlocks(tx, ty) {
+    return this.solidProps.some((p) => p.x === tx && p.y === ty)
+  }
+
+  blockAt(x, y) {
+    return this.blocks.some((b) => b.x === x && b.y === y) || this.propBlocks(x, y)
   }
 
   movePlayer() {
@@ -271,27 +298,28 @@ export class WorldScene extends Phaser.Scene {
     let x = v.x || touch.x
     let y = v.y || touch.y
     if (x || y) this.facing = facingFromVector(x, y)
-    this.player.setFlipX(shouldFlipMerlin(this.facing))
+    this.updateMerlinTexture()
     this.player.body.setVelocity(x * SPEED, y * SPEED)
 
-    // soft tile collision for water/walls without physics gaps
     const tile = worldToTile(this.player.x, this.player.y, TILE)
     if (!isWalkable(this.level, tile.x, tile.y, this.extraWalk) || this.blockAt(tile.x, tile.y)) {
-      this.player.x -= x * 4
-      this.player.y -= y * 4
+      this.player.x -= x * 6
+      this.player.y -= y * 6
     }
   }
 
-  blockAt(x, y) {
-    return this.blocks.some((b) => b.x === x && b.y === y)
+  updateMerlinTexture() {
+    if (this.facing === 'N') this.player.setTexture('merlin-dos')
+    else if (this.facing === 'S') this.player.setTexture('merlin-face')
+    else this.player.setTexture('merlin-profil-droite')
+    this.player.setFlipX(this.facing === 'W')
   }
 
   handleActions() {
     const touch = this.registry.get('touchAction')
     if (touch) this.registry.set('touchAction', null)
 
-    if (this.keys.consume('Escape') || this.keys.down.Escape) {
-      this.keys.down.Escape = false
+    if (this.keys.consume('Escape')) {
       this.scene.pause()
       this.scene.launch('PauseScene')
       return
@@ -299,21 +327,21 @@ export class WorldScene extends Phaser.Scene {
 
     let state = getState(this)
     if (this.keys.consume('Digit1') && state.spellsUnlocked.includes('light')) {
-      state = setActiveSpell(state, 'light'); setState(this, state)
+      setState(this, setActiveSpell(state, 'light'))
     }
     if (this.keys.consume('Digit2') && state.spellsUnlocked.includes('wind')) {
-      state = setActiveSpell(state, 'wind'); setState(this, state)
+      setState(this, setActiveSpell(getState(this), 'wind'))
     }
     if (this.keys.consume('Digit3') && state.spellsUnlocked.includes('nature')) {
-      state = setActiveSpell(state, 'nature'); setState(this, state)
+      setState(this, setActiveSpell(getState(this), 'nature'))
     }
     if (touch === 'cycle' || this.keys.consume('Tab')) {
       state = getState(this)
-      const next = cycleSpell(state.spellsUnlocked, state.activeSpell, 1)
-      setState(this, setActiveSpell(state, next))
+      setState(this, setActiveSpell(state, cycleSpell(state.spellsUnlocked, state.activeSpell, 1)))
     }
 
     const now = this.time.now
+    state = getState(this)
     if ((this.keys.consume('Space') || touch === 'melee') && canMelee(state, now, this.lastMelee)) {
       this.lastMelee = now
       this.doMelee()
@@ -326,11 +354,8 @@ export class WorldScene extends Phaser.Scene {
     if (!this.dialogue) return
     if (this.keys.consume('KeyE') || this.keys.consume('Space') || this.keys.consume('Enter')) {
       this.dialogue.i += 1
-      if (this.dialogue.i >= this.dialogue.lines.length) {
-        this.finishDialogue()
-      } else {
-        showMessage(this, this.dialogue.lines[this.dialogue.i])
-      }
+      if (this.dialogue.i >= this.dialogue.lines.length) this.finishDialogue()
+      else showMessage(this, this.dialogue.lines[this.dialogue.i])
     }
   }
 
@@ -357,7 +382,6 @@ export class WorldScene extends Phaser.Scene {
         return
       }
     }
-    // chest
     for (const c of this.level.chests || []) {
       if (c.x === tile.x && c.y === tile.y) {
         let state = getState(this)
@@ -375,31 +399,22 @@ export class WorldScene extends Phaser.Scene {
   doMelee() {
     const tile = worldToTile(this.player.x, this.player.y, TILE)
     const target = meleeTargetTile(tile, this.facing)
-    const off = forwardOffset(this.facing, 12)
-    const arc = this.add.image(this.player.x + off.x, this.player.y + off.y, 'melee-arc')
-      .setDepth(200)
+    const off = forwardOffset(this.facing, 18)
+    const arc = this.add.image(this.player.x + off.x, this.player.y + off.y, 'arc-attaque')
+      .setDepth(this.player.y + 1)
       .setRotation(FACING_ANGLE[this.facing] || 0)
-      .setAlpha(1)
-      .setScale(1.5)
       .setBlendMode(Phaser.BlendModes.ADD)
+      .setScale(1.2)
     this.tweens.add({
-      targets: arc,
-      alpha: 0,
-      scale: 2.1,
-      duration: 320,
+      targets: arc, alpha: 0, scale: 1.7, duration: 340,
       onComplete: () => arc.destroy(),
     })
-    this.cameras.main.shake(60, 0.004)
-
-    let hitAny = false
+    this.cameras.main.shake(50, 0.003)
     this.enemies.forEach((e, i) => {
-      if (!e.alive) return
-      if (e.x === target.x && e.y === target.y) {
-        hitAny = true
+      if (e.alive && e.x === target.x && e.y === target.y) {
         this.hurtEnemy(i, MELEE_DAMAGE, 'melee', this.facing)
       }
     })
-    if (hitAny) this.cameras.main.shake(80, 0.008)
     if (this.bossPhase) {
       this.bossPhase = bossHit(this.bossPhase, 'melee', this.time.now)
       this.checkFinalBoss()
@@ -409,17 +424,20 @@ export class WorldScene extends Phaser.Scene {
   doCast() {
     let state = getState(this)
     if (!state.activeSpell) return
-    const tile = worldToTile(this.player.x, this.player.y, TILE)
-    const { state: next, effect } = castSpell(state, state.activeSpell, tile, this.facing)
-    if (!effect) {
+    const cost = SPELL_COST[state.activeSpell]
+    const next = spendMana(state, cost)
+    if (!next) {
       showMessage(this, 'Mana insuffisant')
       return
     }
     setState(this, next)
-    if (effect.type === 'projectile') this.spawnProjectile(effect)
-    if (effect.type === 'push') this.applyWind(effect, tile)
-    if (effect.type === 'grow') this.applyNature(effect)
-    if (this.bossPhase && state.activeSpell) {
+    const tile = worldToTile(this.player.x, this.player.y, TILE)
+
+    if (state.activeSpell === 'light') this.castLightBeam(tile)
+    else if (state.activeSpell === 'wind') this.castWind(tile)
+    else this.castNature(tile)
+
+    if (this.bossPhase) {
       this.bossPhase = strikeTotem(this.bossPhase, state.activeSpell, this.time.now)
       this.totemSprites.forEach((s) => {
         if (s.getData('spell') === state.activeSpell) s.setTexture('totem-off')
@@ -428,212 +446,136 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  spawnProjectile(effect) {
-    const off = forwardOffset(this.facing, 8)
-    const { vx, vy } = lightOrbVelocity(this.facing, 180)
-    const spr = this.add.image(this.player.x + off.x, this.player.y + off.y, 'light-orb')
-      .setDepth(220)
-      .setScale(2.2)
+  castLightBeam(tile) {
+    const off = forwardOffset(this.facing, 12)
+    const beam = this.add.image(this.player.x + off.x, this.player.y + off.y, 'rayon-lumiere')
+      .setOrigin(0, 0.5)
+      .setRotation(FACING_ANGLE[this.facing] || 0)
       .setBlendMode(Phaser.BlendModes.ADD)
-    const glow = this.add.image(spr.x, spr.y, 'spell-light')
-      .setDepth(219)
-      .setScale(3.2)
-      .setAlpha(0.75)
-      .setBlendMode(Phaser.BlendModes.ADD)
-    this.projectiles.push({
-      type: 'projectile',
-      spell: effect.spell,
-      wx: spr.x,
-      wy: spr.y,
-      vx: vx * 0.72,
-      vy: vy * 0.72,
-      spr,
-      glow,
-      life: 1.35,
-      trail: 0,
+      .setDepth(this.player.y + 2)
+      .setDisplaySize(200, 22)
+      .setAlpha(1)
+    this.tweens.add({
+      targets: beam, alpha: 0, displayY: 0.4, duration: 380,
+      onComplete: () => beam.destroy(),
     })
-    this.cameras.main.shake(40, 0.003)
-  }
+    this.cameras.main.shake(40, 0.002)
 
-  updateProjectiles(dt) {
-    const remain = []
-    for (const p of this.projectiles) {
-      p.life -= dt
-      p.wx += p.vx * dt
-      p.wy += p.vy * dt
-      p.spr.setPosition(p.wx, p.wy)
-      if (p.glow) p.glow.setPosition(p.wx, p.wy)
-      p.trail = (p.trail || 0) + dt
-      if (p.trail > 0.04) {
-        p.trail = 0
-        const spark = this.add.image(p.wx, p.wy, 'spell-light')
-          .setDepth(218)
-          .setAlpha(0.7)
-          .setBlendMode(Phaser.BlendModes.ADD)
-        spark.setScale(1.6)
-        this.tweens.add({
-          targets: spark,
-          alpha: 0,
-          scale: 0.4,
-          duration: 280,
-          onComplete: () => spark.destroy(),
-        })
-      }
-      const tx = Math.floor(p.wx / TILE)
-      const ty = Math.floor(p.wy / TILE)
+    // hit along 6 tiles
+    const DELTA = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }
+    const [dx, dy] = DELTA[this.facing]
+    for (let i = 1; i <= 6; i++) {
+      const tx = tile.x + dx * i
+      const ty = tile.y + dy * i
       const bp = this.level.puzzles.find((q) => q.type === 'braziers')
       if (bp) {
-        bp.tiles.forEach(([bx, by], i) => {
-          if (bx === tx && by === ty && !this.brazierLit[i]) {
-            this.brazierLit = lightBrazier(this.brazierLit, i)
-            this.brazierSprites[i].setTexture('brazier-on')
+        bp.tiles.forEach(([bx, by], bi) => {
+          if (bx === tx && by === ty && !this.brazierLit[bi]) {
+            this.brazierLit = lightBrazier(this.brazierLit, bi)
+            this.brazierSprites[bi].setTexture('brasero-on')
             this.checkBraziers()
-            p.life = 0
           }
         })
       }
-      this.enemies.forEach((e, i) => {
-        if (!e.alive) return
-        const pos = tileToWorld(e.x, e.y, TILE)
-        if (Math.hypot(pos.x - p.wx, pos.y - p.wy) < 12) {
-          this.hurtEnemy(i, 2, 'light', this.facing)
-          p.life = 0
-        }
+      this.enemies.forEach((e, ei) => {
+        if (e.alive && e.x === tx && e.y === ty) this.hurtEnemy(ei, 2, 'light', this.facing)
       })
-      if (this.bossPhase) {
-        this.bossPhase = bossHit(this.bossPhase, 'light', this.time.now)
-        this.checkFinalBoss()
-      }
-      const ch = this.level.tiles[ty]?.[tx]
-      if (ch === '#') p.life = 0
-      if (p.life <= 0) {
-        p.spr.destroy()
-        p.glow?.destroy()
-      } else remain.push(p)
+      if (this.level.tiles[ty]?.[tx] === '#') break
     }
-    this.projectiles = remain
+    if (this.bossPhase) {
+      this.bossPhase = bossHit(this.bossPhase, 'light', this.time.now)
+      this.checkFinalBoss()
+    }
   }
 
-  applyWind(effect, originTile) {
-    const origin = originTile || worldToTile(this.player.x, this.player.y, TILE)
-    const dir = effect.dir
+  castWind(origin) {
+    const dir = this.facing
     const tiles = windGustTiles(origin, dir)
-    const off = forwardOffset(dir, 14)
-    for (let i = 0; i < 5; i++) {
+    const off = forwardOffset(dir, 20)
+    for (let i = 0; i < 4; i++) {
       const puff = this.add.image(
-        this.player.x + off.x + (Math.random() - 0.5) * 10,
-        this.player.y + off.y + (Math.random() - 0.5) * 10,
-        'wind-puff',
-      ).setDepth(210).setAlpha(0.85).setRotation(FACING_ANGLE[dir] || 0)
+        this.player.x + off.x + (Math.random() - 0.5) * 12,
+        this.player.y + off.y + (Math.random() - 0.5) * 12,
+        'rafale-vent',
+      ).setDepth(this.player.y + 2).setRotation(FACING_ANGLE[dir] || 0).setBlendMode(Phaser.BlendModes.ADD)
       const d = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }[dir]
       this.tweens.add({
         targets: puff,
-        x: puff.x + d[0] * (28 + i * 10),
-        y: puff.y + d[1] * (28 + i * 10),
-        alpha: 0,
-        scaleX: 1.4,
-        duration: 300 + i * 40,
+        x: puff.x + d[0] * (36 + i * 12),
+        y: puff.y + d[1] * (36 + i * 12),
+        alpha: 0, duration: 320 + i * 40,
         onComplete: () => puff.destroy(),
       })
     }
-    this.cameras.main.shake(70, 0.005)
-
+    this.cameras.main.shake(60, 0.004)
     const grid = buildWalkGrid(this.level, this.extraWalk)
-    const hitSet = new Set(tiles.map((t) => `${t.x},${t.y}`))
-
+    const hit = new Set(tiles.map((t) => `${t.x},${t.y}`))
     this.blocks.forEach((b, i) => {
-      if (!hitSet.has(`${b.x},${b.y}`)) return
-      this.blocks.forEach((o, j) => {
-        if (i !== j) grid[o.y][o.x] = false
-      })
+      if (!hit.has(`${b.x},${b.y}`)) return
+      this.blocks.forEach((o, j) => { if (i !== j) grid[o.y][o.x] = false })
       const next = pushBlock(grid, b, dir)
       if (next) {
         this.blocks[i] = next
         const { x, y } = tileToWorld(next.x, next.y, TILE)
-        this.tweens.add({
-          targets: this.blockSprites[i],
-          x, y,
-          duration: 100,
-        })
+        this.tweens.add({ targets: this.blockSprites[i], x, y, duration: 100 })
         this.checkPlates()
       }
     })
     this.enemies.forEach((e, i) => {
-      if (!e.alive) return
-      if (!hitSet.has(`${e.x},${e.y}`)) return
+      if (!e.alive || !hit.has(`${e.x},${e.y}`)) return
       const next = pushBlock(grid, e, dir)
       if (next) {
-        e.x = next.x
-        e.y = next.y
+        e.x = next.x; e.y = next.y
         const { x, y } = tileToWorld(next.x, next.y, TILE)
-        const spr = this.enemySprites[i]
-        this.tweens.add({ targets: spr, x, y, duration: 100 })
-        this.blinkSprite(spr)
+        this.tweens.add({ targets: this.enemySprites[i], x, y, duration: 100 })
+        this.blinkSprite(this.enemySprites[i])
       }
     })
   }
 
-  applyNature(effect) {
+  castNature(origin) {
     const seed = (this.seeds || []).find((s) => {
       const tile = worldToTile(this.player.x, this.player.y, TILE)
       return Math.abs(s.x - tile.x) + Math.abs(s.y - tile.y) <= 1
     })
-    const use = seed || { x: effect.x, y: effect.y, dir: effect.dir }
-    const tiles = growBridge({ x: use.x, y: use.y }, use.dir || effect.dir)
+    const use = seed || { x: origin.x, y: origin.y, dir: this.facing }
+    const tiles = growBridge({ x: use.x, y: use.y }, use.dir || this.facing)
     tiles.forEach((t) => {
       this.extraWalk.add(`${t.x},${t.y}`)
       const { x, y } = tileToWorld(t.x, t.y, TILE)
-      this.add.image(x, y, 'bridge').setAlpha(0.9)
+      const spr = this.add.image(x, y, 'pont-lianes').setDepth(y - 1)
+      this.depthSprites.push(spr)
     })
     this.grown = (this.grown || 0) + 1
     if (this.grown >= (this.seeds?.length || 1)) {
-      let state = setFlag(getState(this), 'bridges-ready', true)
-      setState(this, state)
+      setState(this, setFlag(getState(this), 'bridges-ready', true))
       showMessage(this, 'Les lianes forment un pont.')
     }
   }
 
   checkBraziers() {
     if (!allBraziersLit(this.brazierLit)) return
-    let state = setFlag(getState(this), 'fog-gate', true)
-    setState(this, state)
+    setState(this, setFlag(getState(this), 'fog-gate', true))
     showMessage(this, 'La brume se dissipe.')
-    // open fog gate tiles
-    this.fogGateSprites.forEach(({ gx, gy, sprite }) => {
-      sprite.destroy()
-      this.openTile(gx, gy)
-    })
-    this.fogGateSprites = []
   }
 
   checkPlates() {
     if (!this.plates) return
     const ok = this.plates.every(([px, py]) => this.blocks.some((b) => b.x === px && b.y === py))
     if (!ok) return
-    let state = setFlag(getState(this), 'arch-open', true)
-    setState(this, state)
+    setState(this, setFlag(getState(this), 'arch-open', true))
     showMessage(this, 'L’arche s’ouvre.')
-    // open arch at row 5
-    for (let x = 11; x < 14; x++) {
-      if (this.level.tiles[5]?.[x] === '#') this.openTile(x, 5)
-    }
   }
 
   blinkSprite(spr) {
     if (!spr) return
     let n = 0
-    const iv = this.time.addEvent({
-      delay: 60,
-      repeat: 5,
-      callback: () => {
-        n += 1
-        spr.setAlpha(n % 2 ? 0.25 : 1)
-        if (n >= 6) spr.setAlpha(1)
-      },
+    this.time.addEvent({
+      delay: 60, repeat: 5,
+      callback: () => { n += 1; spr.setAlpha(n % 2 ? 0.3 : 1) },
     })
     spr.setTint(0xff8888)
     this.time.delayedCall(360, () => spr.clearTint())
-    return iv
   }
 
   hurtEnemy(index, amount, kind, knockFacing = null) {
@@ -658,8 +600,7 @@ export class WorldScene extends Phaser.Scene {
       const free = (x, y) => isWalkable(this.level, x, y, this.extraWalk) && !this.blockAt(x, y)
       const kb = knockbackTile({ x: e.x, y: e.y }, knockFacing, free)
       if (kb) {
-        next.x = kb.x
-        next.y = kb.y
+        next.x = kb.x; next.y = kb.y
         this.enemies[index] = next
         const { x, y } = tileToWorld(kb.x, kb.y, TILE)
         this.tweens.add({ targets: spr, x, y, duration: 90 })
@@ -669,13 +610,9 @@ export class WorldScene extends Phaser.Scene {
 
   checkFinalBoss() {
     if (!this.bossPhase || !bossDefeated(this.bossPhase)) return
-    let state = setFlag(getState(this), 'won', true)
-    setState(this, state)
+    setState(this, setFlag(getState(this), 'won', true))
     showMessage(this, 'Les brumes se lèvent.')
-    this.enemies.forEach((e, i) => {
-      e.alive = false
-      this.enemySprites[i]?.destroy()
-    })
+    this.enemies.forEach((e, i) => { e.alive = false; this.enemySprites[i]?.destroy() })
     this.time.delayedCall(2000, () => {
       this.scene.stop('UIScene')
       this.scene.start('TitleScene')
@@ -687,30 +624,24 @@ export class WorldScene extends Phaser.Scene {
     const pt = worldToTile(this.player.x, this.player.y, TILE)
     this.enemies.forEach((e, i) => {
       if (!e.alive) return
-      // chase simply
       let dx = Math.sign(pt.x - e.x)
       let dy = Math.sign(pt.y - e.y)
-      if (Math.random() < 0.02) { dx = 0; dy = 0 }
-      const nx = e.x + (Math.random() < e.speed * dt * 0.08 ? dx : 0)
-      const ny = e.y + (Math.random() < e.speed * dt * 0.08 ? dy : 0)
+      const nx = e.x + (Math.random() < e.speed * dt * 0.06 ? dx : 0)
+      const ny = e.y + (Math.random() < e.speed * dt * 0.06 ? dy : 0)
       if (isWalkable(this.level, nx, ny, this.extraWalk) && !this.blockAt(nx, ny)) {
-        e.x = nx
-        e.y = ny
+        e.x = nx; e.y = ny
         const { x, y } = tileToWorld(e.x, e.y, TILE)
         this.enemySprites[i].setPosition(x, y)
       }
-      // contact damage
       if (e.x === pt.x && e.y === pt.y && now > this.invulnUntil) {
         this.invulnUntil = now + 800
         let state = applyDamage(getState(this), 1)
         setState(this, state)
-        this.cameras.main.flash(100, 120, 20, 20)
+        this.cameras.main.flash(80, 100, 30, 20)
         if (state.hearts <= 0) this.respawn()
       }
-      // shadow extinguishes braziers
       if (e.type === 'shadow-blob') {
         const bp = this.level.puzzles.find((q) => q.type === 'braziers')
-        if (bp && !e._extTimer) e._extTimer = 0
         if (bp) {
           e._extTimer = (e._extTimer || 0) + dt
           if (e._extTimer > 4) {
@@ -718,7 +649,7 @@ export class WorldScene extends Phaser.Scene {
             bp.tiles.forEach(([bx, by], bi) => {
               if (Math.abs(bx - e.x) + Math.abs(by - e.y) <= 1 && this.brazierLit[bi]) {
                 this.brazierLit = extinguishBrazier(this.brazierLit, bi)
-                this.brazierSprites[bi].setTexture('brazier-off')
+                this.brazierSprites[bi].setTexture('brasero-off')
                 showMessage(this, 'Un brasero s’est éteint…')
               }
             })
@@ -731,27 +662,11 @@ export class WorldScene extends Phaser.Scene {
   respawn() {
     const cp = this.level.checkpoints[0] || this.level.spawn
     let state = getState(this)
-    state = { ...state, hearts: Math.max(1, state.heartsMax - 1) }
-    // actually spec: respawn with hearts — give at least 3 or heartsMax?
     state = { ...state, hearts: state.heartsMax }
     setState(this, state)
     showMessage(this, 'Tu reprends tes esprits…')
     const { x, y } = tileToWorld(cp.x, cp.y, TILE)
     this.player.setPosition(x, y)
-    // reset room enemies
-    this.enemies.forEach((e, i) => {
-      if (!e.alive && !this.level.boss && !this.level.finalBoss) {
-        const fresh = createEnemy(e.type, this.level.enemies[i].x, this.level.enemies[i].y, this.level.enemies[i])
-        this.enemies[i] = fresh
-        const pos = tileToWorld(fresh.x, fresh.y, TILE)
-        if (!this.enemySprites[i] || !this.enemySprites[i].active) {
-          const tex = fresh.type.includes('boss') ? 'boss' : 'enemy-shadow'
-          this.enemySprites[i] = this.physics.add.sprite(pos.x, pos.y, tex)
-        } else {
-          this.enemySprites[i].setPosition(pos.x, pos.y).setActive(true).setVisible(true)
-        }
-      }
-    })
   }
 
   checkExits() {
@@ -762,23 +677,18 @@ export class WorldScene extends Phaser.Scene {
       const state = getState(this)
       if (ex.requires && !state.flags[ex.requires]) {
         showMessage(this, 'Pas encore…')
-        // bump back
-        this.player.y += this.facing === 'N' ? 12 : -12
-        this.player.x += this.facing === 'W' ? 12 : this.facing === 'E' ? -12 : 0
+        this.player.y += this.facing === 'N' ? 16 : -16
+        return
+      }
+      if (this.levelId === 'hub' && !canEnter(ex.to, state)) {
+        showMessage(this, 'Pas encore accessible.')
+        this.player.y -= 16
         return
       }
       if (!canEnter(ex.to, state) && ex.to !== 'hub' && !ex.to.includes('dungeon') && !ex.to.includes('boss')) {
         showMessage(this, 'Il te faut parler à Branoc.')
-        this.player.y -= 12
+        this.player.y -= 16
         return
-      }
-      // hub doors to regions: check canEnter
-      if (this.levelId === 'hub') {
-        if (!canEnter(ex.to, state)) {
-          showMessage(this, 'Pas encore accessible.')
-          this.player.y -= 12
-          return
-        }
       }
       this.travel(ex.to)
       return
@@ -786,19 +696,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   travel(levelId) {
-    const state = setPosition(getState(this), {
-      scene: levelId,
-      regionId: levelId,
-      x: 0,
-      y: 0,
-    })
-    setState(this, state)
+    setState(this, setPosition(getState(this), { scene: levelId, regionId: levelId, x: 0, y: 0 }))
     this.scene.start('WorldScene', { levelId })
   }
-}
-
-function listReplace(row, x, ch) {
-  const a = row.split('')
-  a[x] = ch
-  return a.join('')
 }
