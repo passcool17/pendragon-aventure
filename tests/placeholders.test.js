@@ -7,5 +7,8 @@ describe('placeholders', () => {
     expect(PALETTE.gold).toBe('#e8c547')
     expect(TEXTURE_KEYS).toContain('merlin')
     expect(TEXTURE_KEYS).toContain('icon-light')
+    expect(TEXTURE_KEYS).toContain('light-orb')
+    expect(TEXTURE_KEYS).toContain('melee-arc')
+    expect(TEXTURE_KEYS).toContain('wind-puff')
   })
 })

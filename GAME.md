@@ -18,11 +18,13 @@ Zelda-like top-down : hub villageois → forêt (Lumière) → ruines (Vent) →
 
 ## État
 
-**Publié sur GitHub Pages** (prototype jouable, placeholders code).  
+**Publié — passe « feel » combat** (arc mêlée, orbe Lumière, rafale Vent, knockback/clignotement, vignette + brume).  
 URL : https://passcool17.github.io/pendragon-aventure/  
 Repo : https://github.com/passcool17/pendragon-aventure  
 
-Vérification Chrome manuelle : à faire par Pascal (contrôles + captures). Tests Vitest + build Vite verts en CI/local.
+Placeholders code toujours ; sprites Créa à brancher plus tard sur les clés `melee-arc`, `light-orb`, `wind-puff`, `mist-puff`, `merlin`, etc.  
+Vérification Chrome feel : à faire par Pascal.
+
 
 ## Instructions de test rapide
 

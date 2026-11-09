@@ -16,6 +16,7 @@ export const TEXTURE_KEYS = [
   'tile-floor', 'tile-wall', 'tile-water', 'merlin', 'enemy-shadow',
   'spell-light', 'heart', 'mana-pip', 'icon-light', 'icon-wind', 'icon-nature',
   'npc', 'block', 'brazier-off', 'brazier-on', 'bridge', 'totem-on', 'totem-off', 'boss',
+  'melee-arc', 'light-orb', 'wind-puff', 'mist-puff',
 ]
 
 /** @param {Phaser.Scene} scene */
@@ -51,5 +52,27 @@ export function generatePlaceholderTextures(scene) {
   sq('totem-on', '#a67c52', 16, 24)
   sq('totem-off', '#555555', 16, 24)
   sq('boss', '#6b1d4a', 24, 24)
+  // FX keys (Créa may replace later by same names)
+  g.clear()
+  g.fillStyle(hex(PALETTE.gold), 1)
+  g.fillCircle(8, 8, 7)
+  g.fillStyle(hex('#fff6c8'), 0.9)
+  g.fillCircle(8, 8, 3)
+  g.generateTexture('light-orb', 16, 16)
+  g.clear()
+  g.fillStyle(hex('#f0e6c8'), 1)
+  g.slice(12, 12, 11, Phaser.Math.DegToRad(-70), Phaser.Math.DegToRad(70), false)
+  g.fillPath()
+  g.generateTexture('melee-arc', 24, 24)
+  g.clear()
+  g.fillStyle(hex(PALETTE.wind), 0.85)
+  g.fillEllipse(8, 6, 14, 8)
+  g.fillStyle(hex('#d8f4ff'), 0.5)
+  g.fillEllipse(8, 6, 8, 4)
+  g.generateTexture('wind-puff', 16, 12)
+  g.clear()
+  g.fillStyle(hex(PALETTE.mist), 0.35)
+  g.fillEllipse(16, 10, 28, 16)
+  g.generateTexture('mist-puff', 32, 20)
   g.destroy()
 }
