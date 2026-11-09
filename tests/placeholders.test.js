@@ -10,5 +10,6 @@ describe('placeholders', () => {
     expect(TEXTURE_KEYS).toContain('light-orb')
     expect(TEXTURE_KEYS).toContain('melee-arc')
     expect(TEXTURE_KEYS).toContain('wind-puff')
+    expect(TEXTURE_KEYS).toContain('tree')
   })
 })

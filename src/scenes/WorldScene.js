@@ -15,6 +15,7 @@ import { pushBlock } from '../puzzles/windPush.js'
 import { growBridge } from '../puzzles/natureBridge.js'
 import { createBossPhase, strikeTotem, bossHit, bossDefeated } from '../puzzles/bossTotems.js'
 import { shouldFreeze } from '../util/visibility.js'
+import { planDecor, floorStyle } from '../world/decor.js'
 import {
   meleeTargetTile, knockbackTile, lightOrbVelocity, forwardOffset,
   windGustTiles, shouldFlipMerlin, FACING_ANGLE,
@@ -72,6 +73,7 @@ export class WorldScene extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, this.level.width * TILE, this.level.height * TILE)
     this.cameras.main.startFollow(this.player, true, 0.15, 0.15)
+    this.cameras.main.setRoundPixels(true)
     this.physics.world.setBounds(0, 0, this.level.width * TILE, this.level.height * TILE)
 
     this.keys = createKeyTracker(this)
@@ -92,23 +94,19 @@ export class WorldScene extends Phaser.Scene {
   addAtmosphere() {
     const w = this.scale.width
     const h = this.scale.height
+    // Soft edge only — avoid heavy letterbox that shrinks the playfield
     const g = this.add.graphics().setScrollFactor(0).setDepth(800)
-    g.fillStyle(0x000000, 0.45)
-    g.fillRect(0, 0, w, 18)
-    g.fillRect(0, h - 22, w, 22)
-    g.fillRect(0, 0, 22, h)
-    g.fillRect(w - 22, 0, 22, h)
-    g.fillStyle(0x000000, 0.2)
-    g.fillRect(0, 0, w, 36)
-    g.fillRect(0, h - 40, w, 40)
+    g.fillStyle(0x000000, 0.18)
+    g.fillRect(0, 0, w, 10)
+    g.fillRect(0, h - 12, w, 12)
     this.mist = []
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 5; i++) {
       const m = this.add.image(
-        Math.random() * this.level.width * TILE,
-        Math.random() * this.level.height * TILE,
+        (i * 73) % (this.level.width * TILE),
+        20 + (i * 97) % Math.max(16, this.level.height * TILE - 40),
         'mist-puff',
-      ).setDepth(50).setAlpha(0.22).setBlendMode(Phaser.BlendModes.ADD)
-      this.mist.push({ spr: m, vx: 6 + Math.random() * 10, baseY: m.y, t: Math.random() * Math.PI * 2 })
+      ).setDepth(50).setAlpha(0.18).setBlendMode(Phaser.BlendModes.ADD)
+      this.mist.push({ spr: m, vx: 6 + (i % 3) * 3, baseY: m.y, t: i })
     }
   }
 
@@ -135,6 +133,11 @@ export class WorldScene extends Phaser.Scene {
         else if (ch === '~') key = 'tile-water'
         const { x: wx, y: wy } = tileToWorld(x, y, TILE)
         const img = this.add.image(wx, wy, key)
+        if (key === 'tile-floor') {
+          const st = floorStyle(x, y)
+          img.setFlipX(st.flipX)
+          img.setTint(st.tint)
+        }
         this.tileImg.set(`${x},${y}`, img)
         if (ch === '#' || ch === '~') {
           const wall = this.walls.create(wx, wy, key)
@@ -143,9 +146,19 @@ export class WorldScene extends Phaser.Scene {
           this.wallAt.set(`${x},${y}`, wall)
         }
         if (ch === 'N' || ch === 'X') {
-          this.add.rectangle(wx, wy, 14, 14, 0xe8c547, 0.25)
+          this.add.rectangle(wx, wy, 14, 14, 0xe8c547, 0.2)
         }
       }
+    }
+    this.placeDecor()
+  }
+
+  placeDecor() {
+    const items = planDecor(this.level)
+    for (const d of items) {
+      const { x: wx, y: wy } = tileToWorld(d.x, d.y, TILE)
+      const spr = this.add.image(wx, wy, d.key).setDepth(d.key === 'tree' || d.key === 'ruin-column' ? 60 : 40)
+      if (d.originY) spr.setOrigin(0.5, d.originY)
     }
   }
 

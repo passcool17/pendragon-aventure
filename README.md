@@ -20,19 +20,16 @@ Aventure Zelda-like top-down (Phaser 3), originale, ambiance Bretagne post-romai
 
 ## Debug (saut de niveau)
 
-Ajouter à l’URL Pages ou locale :
+- `?level=forest` / `ruins` / `sanctuary` / `boss-final`
+- `?spells=all&fragments=all` · `?god=1`
 
-- `?level=forest` — démarre en forêt (quête + sorts utiles)
-- `?level=ruins` — ruines avec fragment forêt
-- `?level=sanctuary` — sanctuaire
-- `?level=boss-final` — gardien final (3 fragments + 3 sorts)
-- `?level=hub&spells=all&fragments=all` — hub tout débloqué
-- `?god=1` — cœurs max
+Ex. : https://passcool17.github.io/pendragon-aventure/?level=forest
 
-Exemples :
+## Visuels
 
-- https://passcool17.github.io/pendragon-aventure/?level=forest
-- https://passcool17.github.io/pendragon-aventure/?level=boss-final
+Sprites pixel art **Créa** (`public/assets/sprites/`, clés = noms de fichiers).  
+Effets FX (arc, orbe, vent, brume) encore générés en code tant que non livrés.  
+Aperçu source : `/workspace/crea/merlin-foret-bretonne/sprites/`.
 
 ## Dev local
 
@@ -43,12 +40,10 @@ npm run dev
 npm run build
 ```
 
-Base Vite : `/pendragon-aventure/` (GitHub Pages projet).
+Base Vite : `/pendragon-aventure/` (GitHub Pages projet). Scale entier pour pixels nets.
 
 ## Docs
 
 - Spec : `docs/superpowers/specs/2026-11-09-merlin-zelda-like-design.md`
 - Plan : `docs/superpowers/plans/2026-11-09-merlin-les-brumes-de-bretagne.md`
 - Suivi : `GAME.md`
-
-Placeholders graphiques générés en code. Assets finaux / audio : plus tard (Créa / Voix / SUNO). Personnages fictifs.

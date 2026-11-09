@@ -3,12 +3,13 @@ export class UIScene extends Phaser.Scene {
 
   create() {
     this.hearts = []
-    this.manaBar = this.add.rectangle(12, 22, 60, 6, 0x1a2420).setOrigin(0, 0.5).setScrollFactor(0).setDepth(1000)
-    this.manaFill = this.add.rectangle(12, 22, 60, 6, 0x4a8fd4).setOrigin(0, 0.5).setScrollFactor(0).setDepth(1001)
+    this.manaPips = []
+    this.manaBack = this.add.rectangle(12, 22, 52, 10, 0x1a2420, 0.7)
+      .setOrigin(0, 0.5).setScrollFactor(0).setDepth(999)
     this.icons = {}
     const keys = ['light', 'wind', 'nature']
     keys.forEach((k, i) => {
-      const x = 320 + i * 20
+      const x = 320 + i * 22
       const img = this.add.image(x, 260, `icon-${k}`).setScrollFactor(0).setDepth(1000).setAlpha(0.35)
       this.icons[k] = img
     })
@@ -41,13 +42,21 @@ export class UIScene extends Phaser.Scene {
       h.setAlpha(i < state.hearts ? 1 : 0.25)
       this.hearts.push(h)
     }
-    this.manaFill.width = Math.max(0, 60 * state.mana)
+    this.manaPips.forEach((p) => p.destroy())
+    this.manaPips = []
+    const pipCount = 5
+    const filled = Math.round(state.mana * pipCount)
+    for (let i = 0; i < pipCount; i++) {
+      const pip = this.add.image(16 + i * 9, 22, 'mana-pip')
+        .setScrollFactor(0).setDepth(1001)
+        .setAlpha(i < filled ? 1 : 0.2)
+      this.manaPips.push(pip)
+    }
     for (const [k, img] of Object.entries(this.icons)) {
       const unlocked = state.spellsUnlocked.includes(k)
       img.setAlpha(unlocked ? 1 : 0.25)
       img.setTint(state.activeSpell === k ? 0xffffff : 0x888888)
-      if (state.activeSpell === k) img.setScale(1.15)
-      else img.setScale(1)
+      img.setScale(state.activeSpell === k ? 1.15 : 1)
     }
   }
 
@@ -62,7 +71,8 @@ export class UIScene extends Phaser.Scene {
     pad.on('pointerup', () => this.registry.set('touchVec', { x: 0, y: 0 }))
     const mkBtn = (x, label, action) => {
       const b = this.add.rectangle(x, 250, 48, 48, 0xe8c547, 0.35).setScrollFactor(0).setDepth(900).setInteractive()
-      this.add.text(x, 250, label, { fontFamily: 'monospace', fontSize: '10px', color: '#fff' }).setOrigin(0.5).setScrollFactor(0).setDepth(901)
+      this.add.text(x, 250, label, { fontFamily: 'monospace', fontSize: '10px', color: '#fff' })
+        .setOrigin(0.5).setScrollFactor(0).setDepth(901)
       b.on('pointerdown', () => this.registry.set('touchAction', action))
     }
     mkBtn(280, 'A', 'melee')

@@ -2,7 +2,7 @@
 
 ## Concept
 
-Zelda-like top-down : hub villageois → forêt (Lumière) → ruines (Vent) → sanctuaire (Nature) → Gardien des Brumes. Personnages fictifs ; ambiance Bretagne post-romaine.
+Zelda-like top-down : hub → forêt (Lumière) → ruines (Vent) → sanctuaire (Nature) → Gardien. Personnages fictifs ; ambiance Bretagne post-romaine.
 
 ## Contrôles
 
@@ -18,33 +18,23 @@ Zelda-like top-down : hub villageois → forêt (Lumière) → ruines (Vent) →
 
 ## État
 
-**Publié — passe « feel » combat** (arc mêlée, orbe Lumière, rafale Vent, knockback/clignotement, vignette + brume).  
+**Publié — sprites Créa intégrés** + scale pixel entier, déco forêt/ruines, HUD cœurs/mana-pip/icônes.  
 URL : https://passcool17.github.io/pendragon-aventure/  
 Repo : https://github.com/passcool17/pendragon-aventure  
 
-Placeholders code toujours ; sprites Créa à brancher plus tard sur les clés `melee-arc`, `light-orb`, `wind-puff`, `mist-puff`, `merlin`, etc.  
-Vérification Chrome feel : à faire par Pascal.
-
+Crédits visuels : **Créa** (pack `merlin-foret-bretonne/sprites`). FX combat encore procéduraux.
 
 ## Instructions de test rapide
 
-1. Ouvrir l’URL Pages (ou `?level=hub`).
-2. **Nouvelle partie** → parler à **Branoc** (E) → sortir au sud vers la forêt.
-3. **Lumière** : touche `1`, viser un brasero, `F`. Allumer les 3. Entrée nord du donjon → boss → fragment.
-4. Retour hub. Sortie **est** → ruines. **Vent** (`2`+`F`) pousse les blocs sur les dalles. Donjon → boss → fragment.
-5. Hub **ouest** → sanctuaire. Près d’une graine, **Nature** (`3`+`F`) pour ponts. Donjon → boss → fragment.
-6. Hub **nord** → gardien final : `F` avec chaque sort sur les totems, puis mêlée pendant la vulnérabilité.
+1. Pages → Nouvelle partie → Branoc → forêt sud.
+2. Lumière `1`+`F` sur 3 braseros → donjon nord → boss.
+3. Ruines (est) : Vent `2`+`F` sur blocs.
+4. Sanctuaire (ouest) : Nature `3`+`F` près des graines.
+5. Nord hub : totems + mêlée.
 
-### Raccourcis debug
-
-- `?level=forest` — tester Lumière / braseros
-- `?level=ruins` — tester Vent / blocs
-- `?level=sanctuary` — tester Nature / ponts
-- `?level=boss-final` — combat final
-- `?spells=all&fragments=all` — tout débloqué au hub
+Debug : `?level=forest` etc.
 
 ## Prochaines idées
 
-- Sprites / tileset Créa ; musique SUNO ; voix courte.
-- Polish boss de région (motifs télégraphiés).
-- Cœur bonus mur cassable à la Lumière.
+- Remplacer FX procéduraux si Créa livre arc/orbe/vent.
+- Musique SUNO ; polish boss.
